@@ -6,7 +6,7 @@
     <title>Sistema de Acompanhamento de Obras</title>
     
     <style>
-        /* CSS completo, sem alterações nesta versão */
+        /* CSS completo, sem alterações */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         body, html { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; color: #333; height: 100%; overflow: hidden; background-color: #f4f7fa; }
         * { box-sizing: border-box; }
@@ -48,6 +48,12 @@
         .form-group.full-width { grid-column: 1 / -1; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; font-family: 'Poppins', sans-serif; }
+        /* Adicionado estilo para inputs readonly */
+        .form-group input:read-only, .form-group textarea:read-only, input:read-only {
+            background-color: #e9ecef;
+            opacity: 1;
+            cursor: not-allowed;
+        }
         textarea { resize: vertical; min-height: 80px; }
         fieldset { border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-top: 20px; grid-column: 1 / -1; }
         legend { font-weight: 600; color: #1e3a5f; padding: 0 10px; }
@@ -154,18 +160,84 @@
         </main>
     </div>
 
-    <div id="modal-novo-contrato" class="modal">...</div>
-    <div id="modal-comuniquese" class="modal">...</div>
+    <div id="modal-novo-contrato" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Adicionar Novo Contrato</h2>
+                <button class="close-button">&times;</button>
+            </div>
+            <form id="form-novo-contrato">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group"><label for="nome-curto">Nome Curto (Menu):</label><input type="text" id="nome-curto" required></div>
+                        <div class="form-group"><label for="nome-completo">Nome Completo (Título):</label><input type="text" id="nome-completo" required></div>
+                        <fieldset>
+                            <legend>Metas</legend>
+                            <div class="form-grid">
+                                <div class="form-group"><label for="meta-imob">Meta Imobilização (R$):</label><input type="number" id="meta-imob" step="0.01" min="0"></div>
+                                <div class="form-group"><label for="meta-econ">Meta Economias (Casas):</label><input type="number" id="meta-econ" min="0"></div>
+                                <div class="form-group"><label for="meta-avance">Meta Avanço Físico (m):</label><input type="number" id="meta-avance" min="0"></div>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-button">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar Contrato</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="modal-comuniquese" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-cs-title">Novo Comunique-se</h2>
+                <button class="close-button">&times;</button>
+            </div>
+            <form id="form-comuniquese">
+                <input type="hidden" id="cs-id">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group"><label for="cs-protocolo">Protocolo:</label><input type="text" id="cs-protocolo" required></div>
+                        <div class="form-group"><label for="cs-orgao">Órgão Emissor:</label><input type="text" id="cs-orgao" required></div>
+                        <div class="form-group"><label for="cs-data-recebimento">Data Recebimento:</label><input type="date" id="cs-data-recebimento" required></div>
+                        <div class="form-group"><label for="cs-prazo-dias">Prazo (Dias):</label><input type="number" id="cs-prazo-dias" min="1" required></div>
+                        <div class="form-group full-width"><label for="cs-assunto">Assunto:</label><textarea id="cs-assunto" rows="2"></textarea></div>
+                        <div class="form-group"><label for="cs-responsavel">Responsável:</label><input type="text" id="cs-responsavel"></div>
+                        <div class="form-group"><label for="cs-status">Status:</label><select id="cs-status"><option value="Pendente">Pendente</option><option value="Respondido">Respondido</option></select></div>
+                        <div class="form-group"><label for="cs-data-resposta">Data Resposta:</label><input type="date" id="cs-data-resposta"></div>
+                        <div class="form-group"><label for="cs-oficio-resposta">Ofício Resposta:</label><input type="text" id="cs-oficio-resposta"></div>
+                        <div class="form-group full-width"><label for="cs-observacao">Observação:</label><textarea id="cs-observacao" rows="3"></textarea></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-button">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
     // ======================================================================================================
-    // SCRIPT COMPLETO FINAL (v7 - Navegação por teclado) - COPIE E COLE ESTE BLOCO INTEIRO
+    // SCRIPT COMPLETO (v9 - Chaves Corrigidas + Modo de Edição)
     // ======================================================================================================
     /**
     * @author ERIVANDRO JUNIOR
     */
+
+    // Variável global para controlar o estado de administração
+    let isAdmin = false;
+
     document.addEventListener('DOMContentLoaded', () => {
 
+        // Verifica o parâmetro da URL para ativar o modo de edição
+        const urlParams = new URLSearchParams(window.location.search);
+        // Mude 'edicao' para qualquer chave secreta que você quiser
+        isAdmin = urlParams.get('modo') === 'edicao'; 
+
+        // [CORREÇÃO]: Inseri suas chaves corretas que encontrei no seu script original.
         const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/68e8e81ad0ea881f409c51f0'; 
         const API_KEY = '$2a$10$L4n/qlQ8LGkgQmd9p7zhaOAK6j5pgA.2Tq7xK019hUqDGNfPmqJ5O'; 
 
@@ -177,123 +249,311 @@
         const contentArea = document.getElementById('content-area');
         const sidebar = document.querySelector('.sidebar');
         
+        // Funções utilitárias
         const formatCurrency = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const formatUnits = (v, u = '') => `${(Math.round(v) || 0).toLocaleString('pt-BR')} ${u}`.trim();
         const formatAsCompactCurrency = (v) => (v >= 1e6 ? `R$ ${(v / 1e6).toFixed(1).replace('.', ',')} mi` : (v >= 1e3 ? `R$ ${(v / 1e3).toFixed(1).replace('.', ',')} mil` : formatCurrency(v)));
         const calculatePercentage = (c, g) => (g > 0 ? (c / g) * 100 : 0);
         const formatarValorFaltante = (m, a, t, u = '', d = 1) => { const diff = m - a; if (diff <= 0) { const s = Math.abs(diff); let vf; if (t === 'currency') vf = formatCurrency(s); else vf = formatUnits(s / d, u); return `Superamos a meta em <span class="goal-surpassed">${vf}</span>`; } else { let vf; if (t === 'currency') vf = formatCurrency(diff); else vf = formatUnits(diff / d, u); return `Faltam: <span>${vf}</span>`; } };
-
         function getBusinessDaysBetween(startDate, endDate, holidays) { let count = 0; const curDate = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate())); const lastDate = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate())); const holidaySet = new Set(holidays); while (curDate <= lastDate) { const dayOfWeek = curDate.getUTCDay(); const isoDate = curDate.toISOString().split('T')[0]; if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidaySet.has(isoDate)) { count++; } curDate.setUTCDate(curDate.getUTCDate() + 1); } return count; }
 
+        // Funções de Renderização
         function gerarNavegacao(obras) { const activeId = navList.querySelector('a.active')?.dataset.id || 'painel-tv'; navList.innerHTML = ''; navList.innerHTML += `<li><a data-id="painel-tv" title="Painel TV">📺 Painel TV</a></li>`; navList.innerHTML += `<li><a data-id="visao-geral">Visão Geral</a></li>`; navList.innerHTML += `<li><a data-id="comuniqueses">📄 Comunique-se</a></li>`; obras.sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto)).forEach(o => { navList.innerHTML += `<li><a data-id="${o.id}">${o.nomeCurto}</a></li>`; }); const linkAtivo = navList.querySelector(`a[data-id="${activeId}"]`) || navList.querySelector('a'); if (linkAtivo) linkAtivo.classList.add('active'); navList.querySelectorAll('a').forEach(l => l.addEventListener('click', handleNavClick)); }
-        
         function mostrarVisaoGeral(obras) { const tImobM = obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0), tImobA = obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0), tEconM = obras.reduce((s, o) => s + o.dadosEconomia.meta, 0), tEconA = obras.reduce((s, o) => s + o.dadosEconomia.atual, 0), tAvanceM = obras.reduce((s, o) => s + o.dadosAvanceFisico.meta, 0), tAvanceA = obras.reduce((s, o) => s + o.dadosAvanceFisico.atual, 0); const pImob = calculatePercentage(tImobA, tImobM), pEcon = calculatePercentage(tEconA, tEconM), pAvance = calculatePercentage(tAvanceA, tAvanceM); contentArea.innerHTML = `<div class="content-header"><div><h1>Visão Geral do Projeto</h1><p>Resumo de todos os contratos.</p></div></div><div class="dashboard-grid"><section class="metrics"><figure class="metric-card"><figcaption class="label">Contratos Ativos</figcaption><div class="value">${obras.length}</div></figure><figure class="metric-card"><figcaption class="label">Imobilização Total</figcaption><div class="value goal">${formatAsCompactCurrency(tImobM)}</div></figure><figure class="metric-card"><figcaption class="label">Economias Totais</figcaption><div class="value goal">${formatUnits(tEconM, 'casas')}</div></figure><figure class="metric-card"><figcaption class="label">Extensão Total</figcaption><div class="value goal">${formatUnits(tAvanceM / 1e3, 'km')}</div></figure></section><section class="metric-card progress-card"><h3>Progresso: Imobilização</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pImob > 100 ? 100 : pImob.toFixed(2)}%;">${pImob.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tImobM, tImobA, 'currency')}</div><div>Executado: <span>${formatCurrency(tImobA)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Economias</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pEcon > 100 ? 100 : pEcon.toFixed(2)}%;background-color:#ff9800;">${pEcon.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tEconM, tEconA, 'units', 'casas')}</div><div>Alcançado: <span>${formatUnits(tEconA, 'casas')}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Avanço Físico</h3><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pAvance > 100 ? 100 : pAvance.toFixed(2)}%;">${pAvance.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tAvanceM, tAvanceA, 'units', 'km', 1e3)}</div><div>Executado: <span>${formatUnits(tAvanceA / 1e3, 'km')}</span></div></div></section></div>`; }
-        function mostrarPaginaObra(o) { const pI = calculatePercentage(o.dadosImobilizacao.atual, o.dadosImobilizacao.meta), pE = calculatePercentage(o.dadosEconomia.atual, o.dadosEconomia.meta), pA = calculatePercentage(o.dadosAvanceFisico.atual, o.dadosAvanceFisico.meta); const vIf = (o.dadosImobilizacao.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); contentArea.innerHTML = `<div class="content-header"><div><h1>${o.nomeCompleto}</h1><p>Acompanhamento detalhado.</p></div></div><div class="dashboard-grid"><section class="metric-card progress-card"><h3>Imobilização Financeira</h3><div class="input-area"><label for="input-imob">Valor Realizado:</label><div class="input-wrapper"><span class="currency-symbol">R$</span><input type="text" id="input-imob" data-obra-id="${o.id}" data-tipo="imobilizacao" value="${vIf}"></div></div><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosImobilizacao.meta, o.dadosImobilizacao.atual, 'currency')}</div><div>Meta: <span>${formatCurrency(o.dadosImobilizacao.meta)}</span></div></div></section><section class="metric-card progress-card"><h3>Economias (Casas)</h3><div class="input-area"><label for="input-econ">Casas Atendidas:</label><div class="input-wrapper"><input type="text" id="input-econ" class="no-symbol" data-obra-id="${o.id}" data-tipo="economia" value="${(o.dadosEconomia.atual || 0).toLocaleString('pt-BR')}"></div></div><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosEconomia.meta, o.dadosEconomia.atual, 'units', 'casas')}</div><div>Meta: <span>${formatUnits(o.dadosEconomia.meta, 'casas')}</span></div></div></section><section class="metric-card progress-card"><h3>Avanço Físico (m)</h3><div class="input-area"><label for="input-avance">Metros Executados:</label><div class="input-wrapper"><input type="text" id="input-avance" class="no-symbol" data-obra-id="${o.id}" data-tipo="avance" value="${(o.dadosAvanceFisico.atual || 0).toLocaleString('pt-BR')}"></div></div><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosAvanceFisico.meta, o.dadosAvanceFisico.atual, 'units', 'm')}</div><div>Meta: <span>${formatUnits(o.dadosAvanceFisico.meta, 'm')}</span></div></div></section><section class="metric-card danger-zone"><h3>Zona de Perigo</h3><p>A exclusão de um contrato é permanente.</p><button id="btn-excluir-contrato" data-obra-id="${o.id}">Excluir Contrato</button></section></div>`; contentArea.querySelectorAll('input[type="text"]').forEach(i => { i.addEventListener('input', handleInputFormatting); i.addEventListener('change', handleInputChange); }); document.getElementById('btn-excluir-contrato').addEventListener('click', handleExcluirClick); }
         
-        // --- FUNÇÕES DO PAINEL TV ---
-        function proximoSlide() { if(slides.length === 0) return; slides[currentSlide].classList.remove('active'); currentSlide = (currentSlide + 1) % slides.length; slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); }
-        function slideAnterior() { if(slides.length === 0) return; slides[currentSlide].classList.remove('active'); currentSlide = (currentSlide - 1 + slides.length) % slides.length; slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); }
-        function reiniciarTimerSlideshow() { clearInterval(slideshowInterval); slideshowInterval = setInterval(proximoSlide, 10000); }
-        const handlePainelTVKeyPress = (event) => { if(event.key === 'ArrowRight') proximoSlide(); if(event.key === 'ArrowLeft') slideAnterior(); };
-
-        function mostrarPainelTV() {
-            // ... (código da função está completo e correto no bloco final)
-        }
-        function setupCalendarLogic(h) { 
-            // ... (código da função está completo e correto no bloco final)
-        }
-
-        // --- FUNÇÕES DO COMUNIQUE-SE ---
-        function mostrarPaginaComuniqueses() { 
-            // ... (código da função está completo e correto no bloco final)
-        }
-        // ... (resto das funções do comunique-se)
-
-        async function carregarDados() { try { const r = await fetch(JSONBIN_URL, { headers: { 'X-Master-Key': API_KEY } }); if (!r.ok) throw new Error(`Falha na rede: ${r.status}`); const d = await r.json(); database = d.record; if (!database.obras) database.obras = []; if (!database.comuniqueses) database.comuniqueses = []; gerarNavegacao(database.obras); mostrarPainelTV(); } catch (e) { console.error("Erro fatal:", e); contentArea.innerHTML = `<h1>Erro</h1><p>Não foi possível conectar. Verifique URL/Chave e conexão. Detalhes: ${e.message}</p>`; } }
-        let saveTimeout; function salvarDados(fU = false) { clearTimeout(saveTimeout); saveTimeout = setTimeout(async () => { console.log("Salvando..."); try { const r = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY }, body: JSON.stringify(database) }); if (!r.ok) throw new Error('Falha ao salvar.'); console.log("Salvo!"); if (fU) { const aL = navList.querySelector('a.active'); if (aL) aL.click(); } } catch (e) { console.error("Erro ao salvar:", e); alert("Não foi possível salvar."); } }, 1500); }
-        
-        function handleNavClick(e) {
-            e.preventDefault();
-            // Desativa o listener de teclado sempre que navegar
-            document.removeEventListener('keydown', handlePainelTVKeyPress);
-            clearInterval(slideshowInterval); 
+        function mostrarPaginaObra(o) {
+            const pI = calculatePercentage(o.dadosImobilizacao.atual, o.dadosImobilizacao.meta), pE = calculatePercentage(o.dadosEconomia.atual, o.dadosEconomia.meta), pA = calculatePercentage(o.dadosAvanceFisico.atual, o.dadosAvanceFisico.meta);
+            const vIf = (o.dadosImobilizacao.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
             
-            const id = e.target.dataset.id;
-            const cA = navList.querySelector('a.active');
-            if (cA) cA.classList.remove('active');
-            e.target.classList.add('active');
-            if (document.fullscreenElement) document.exitFullscreen();
-            sidebar.classList.remove('hidden');
-            contentArea.classList.remove('fullscreen');
+            // Define o estado readonly e o estilo de display com base no 'isAdmin'
+            const readOnlyState = !isAdmin ? 'readonly' : '';
+            const adminOnlyDisplay = !isAdmin ? 'style="display:none;"' : '';
 
-            if (id === 'visao-geral') mostrarVisaoGeral(database.obras);
-            else if (id === 'painel-tv') mostrarPainelTV();
-            else if (id === 'comuniqueses') mostrarPaginaComuniqueses();
-            else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); }
+            contentArea.innerHTML = `
+            <div class="content-header"><div><h1>${o.nomeCompleto}</h1><p>Acompanhamento detalhado.</p></div></div>
+            <div class="dashboard-grid">
+                <section class="metric-card progress-card">
+                    <h3>Imobilização Financeira</h3>
+                    <div class="input-area">
+                        <label for="input-imob">Valor Realizado:</label>
+                        <div class="input-wrapper"><span class="currency-symbol">R$</span><input type="text" id="input-imob" data-obra-id="${o.id}" data-tipo="imobilizacao" value="${vIf}" ${readOnlyState}></div>
+                    </div>
+                    <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div>
+                    <div class="progress-details">
+                        <div>${formatarValorFaltante(o.dadosImobilizacao.meta, o.dadosImobilizacao.atual, 'currency')}</div>
+                        <div>Meta: <span>${formatCurrency(o.dadosImobilizacao.meta)}</span></div>
+                    </div>
+                </section>
+                <section class="metric-card progress-card">
+                    <h3>Economias (Casas)</h3>
+                    <div class="input-area">
+                        <label for="input-econ">Casas Atendidas:</label>
+                        <div class="input-wrapper"><input type="text" id="input-econ" class="no-symbol" data-obra-id="${o.id}" data-tipo="economia" value="${(o.dadosEconomia.atual || 0).toLocaleString('pt-BR')}" ${readOnlyState}></div>
+                    </div>
+                    <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div>
+                    <div class="progress-details">
+                        <div>${formatarValorFaltante(o.dadosEconomia.meta, o.dadosEconomia.atual, 'units', 'casas')}</div>
+                        <div>Meta: <span>${formatUnits(o.dadosEconomia.meta, 'casas')}</span></div>
+                    </div>
+                </section>
+                <section class="metric-card progress-card">
+                    <h3>Avanço Físico (m)</h3>
+                    <div class="input-area">
+                        <label for="input-avance">Metros Executados:</label>
+                        <div class="input-wrapper"><input type="text" id="input-avance" class="no-symbol" data-obra-id="${o.id}" data-tipo="avance" value="${(o.dadosAvanceFisico.atual || 0).toLocaleString('pt-BR')}" ${readOnlyState}></div>
+                    </div>
+                    <div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div>
+                    <div class="progress-details">
+                        <div>${formatarValorFaltante(o.dadosAvanceFisico.meta, o.dadosAvanceFisico.atual, 'units', 'm')}</div>
+                        <div>Meta: <span>${formatUnits(o.dadosAvanceFisico.meta, 'm')}</span></div>
+                    </div>
+                </section>
+                <section class="metric-card danger-zone" ${adminOnlyDisplay}>
+                    <h3>Zona de Perigo</h3>
+                    <p>A exclusão de um contrato é permanente.</p>
+                    <button id="btn-excluir-contrato" data-obra-id="${o.id}">Excluir Contrato</button>
+                </section>
+            </div>`;
+            
+            // Só adiciona os 'listeners' de edição se for admin
+            if (isAdmin) {
+                contentArea.querySelectorAll('input[type="text"]').forEach(i => {
+                    i.addEventListener('input', handleInputFormatting);
+                    i.addEventListener('change', handleInputChange);
+                });
+                // Garante que o botão existe antes de adicionar o listener
+                const btnExcluir = document.getElementById('btn-excluir-contrato');
+                if (btnExcluir) {
+                    btnExcluir.addEventListener('click', handleExcluirClick);
+                }
+            }
         }
-
-        // ... (resto do JS está no bloco final)
-    });
-    </script>
-    <script>
-    // ======================================================================================================
-    // SCRIPT COMPLETO FINAL (v7 - CORRIGIDO) - COPIE E COLE ESTE BLOCO INTEIRO
-    // ======================================================================================================
-    /**
-    * @author ERIVANDRO JUNIOR
-    */
-    document.addEventListener('DOMContentLoaded', () => {
-
-        const JSONBIN_URL = 'COLE_A_URL_DO_SEU_BIN_AQUI'; 
-        const API_KEY = 'COLE_SUA_CHAVE_DE_API_AQUI'; 
-
-        let database = { obras: [], comuniqueses: [] };
-        let slideshowInterval = null;
-        let currentSlide = 0;
-        let slides = [];
-        const navList = document.querySelector('#main-nav ul');
-        const contentArea = document.getElementById('content-area');
-        const sidebar = document.querySelector('.sidebar');
         
-        const formatCurrency = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        const formatUnits = (v, u = '') => `${(Math.round(v) || 0).toLocaleString('pt-BR')} ${u}`.trim();
-        const formatAsCompactCurrency = (v) => (v >= 1e6 ? `R$ ${(v / 1e6).toFixed(1).replace('.', ',')} mi` : (v >= 1e3 ? `R$ ${(v / 1e3).toFixed(1).replace('.', ',')} mil` : formatCurrency(v)));
-        const calculatePercentage = (c, g) => (g > 0 ? (c / g) * 100 : 0);
-        const formatarValorFaltante = (m, a, t, u = '', d = 1) => { const diff = m - a; if (diff <= 0) { const s = Math.abs(diff); let vf; if (t === 'currency') vf = formatCurrency(s); else vf = formatUnits(s / d, u); return `Superamos a meta em <span class="goal-surpassed">${vf}</span>`; } else { let vf; if (t === 'currency') vf = formatCurrency(diff); else vf = formatUnits(diff / d, u); return `Faltam: <span>${vf}</span>`; } };
-
-        function getBusinessDaysBetween(startDate, endDate, holidays) { let count = 0; const curDate = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate())); const lastDate = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate())); const holidaySet = new Set(holidays); while (curDate <= lastDate) { const dayOfWeek = curDate.getUTCDay(); const isoDate = curDate.toISOString().split('T')[0]; if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidaySet.has(isoDate)) { count++; } curDate.setUTCDate(curDate.getUTCDate() + 1); } return count; }
-
-        function gerarNavegacao(obras) { const activeId = navList.querySelector('a.active')?.dataset.id || 'painel-tv'; navList.innerHTML = ''; navList.innerHTML += `<li><a data-id="painel-tv" title="Painel TV">📺 Painel TV</a></li>`; navList.innerHTML += `<li><a data-id="visao-geral">Visão Geral</a></li>`; navList.innerHTML += `<li><a data-id="comuniqueses">📄 Comunique-se</a></li>`; obras.sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto)).forEach(o => { navList.innerHTML += `<li><a data-id="${o.id}">${o.nomeCurto}</a></li>`; }); const linkAtivo = navList.querySelector(`a[data-id="${activeId}"]`) || navList.querySelector('a'); if (linkAtivo) linkAtivo.classList.add('active'); navList.querySelectorAll('a').forEach(l => l.addEventListener('click', handleNavClick)); }
-        function mostrarVisaoGeral(obras) { const tImobM = obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0), tImobA = obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0), tEconM = obras.reduce((s, o) => s + o.dadosEconomia.meta, 0), tEconA = obras.reduce((s, o) => s + o.dadosEconomia.atual, 0), tAvanceM = obras.reduce((s, o) => s + o.dadosAvanceFisico.meta, 0), tAvanceA = obras.reduce((s, o) => s + o.dadosAvanceFisico.atual, 0); const pImob = calculatePercentage(tImobA, tImobM), pEcon = calculatePercentage(tEconA, tEconM), pAvance = calculatePercentage(tAvanceA, tAvanceM); contentArea.innerHTML = `<div class="content-header"><div><h1>Visão Geral do Projeto</h1><p>Resumo de todos os contratos.</p></div></div><div class="dashboard-grid"><section class="metrics"><figure class="metric-card"><figcaption class="label">Contratos Ativos</figcaption><div class="value">${obras.length}</div></figure><figure class="metric-card"><figcaption class="label">Imobilização Total</figcaption><div class="value goal">${formatAsCompactCurrency(tImobM)}</div></figure><figure class="metric-card"><figcaption class="label">Economias Totais</figcaption><div class="value goal">${formatUnits(tEconM, 'casas')}</div></figure><figure class="metric-card"><figcaption class="label">Extensão Total</figcaption><div class="value goal">${formatUnits(tAvanceM / 1e3, 'km')}</div></figure></section><section class="metric-card progress-card"><h3>Progresso: Imobilização</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pImob > 100 ? 100 : pImob.toFixed(2)}%;">${pImob.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tImobM, tImobA, 'currency')}</div><div>Executado: <span>${formatCurrency(tImobA)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Economias</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pEcon > 100 ? 100 : pEcon.toFixed(2)}%;background-color:#ff9800;">${pEcon.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tEconM, tEconA, 'units', 'casas')}</div><div>Alcançado: <span>${formatUnits(tEconA, 'casas')}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Avanço Físico</h3><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pAvance > 100 ? 100 : pAvance.toFixed(2)}%;">${pAvance.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tAvanceM, tAvanceA, 'units', 'km', 1e3)}</div><div>Executado: <span>${formatUnits(tAvanceA / 1e3, 'km')}</span></div></div></section></div>`; }
-        function mostrarPaginaObra(o) { const pI = calculatePercentage(o.dadosImobilizacao.atual, o.dadosImobilizacao.meta), pE = calculatePercentage(o.dadosEconomia.atual, o.dadosEconomia.meta), pA = calculatePercentage(o.dadosAvanceFisico.atual, o.dadosAvanceFisico.meta); const vIf = (o.dadosImobilizacao.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); contentArea.innerHTML = `<div class="content-header"><div><h1>${o.nomeCompleto}</h1><p>Acompanhamento detalhado.</p></div></div><div class="dashboard-grid"><section class="metric-card progress-card"><h3>Imobilização Financeira</h3><div class="input-area"><label for="input-imob">Valor Realizado:</label><div class="input-wrapper"><span class="currency-symbol">R$</span><input type="text" id="input-imob" data-obra-id="${o.id}" data-tipo="imobilizacao" value="${vIf}"></div></div><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosImobilizacao.meta, o.dadosImobilizacao.atual, 'currency')}</div><div>Meta: <span>${formatCurrency(o.dadosImobilizacao.meta)}</span></div></div></section><section class="metric-card progress-card"><h3>Economias (Casas)</h3><div class="input-area"><label for="input-econ">Casas Atendidas:</label><div class="input-wrapper"><input type="text" id="input-econ" class="no-symbol" data-obra-id="${o.id}" data-tipo="economia" value="${(o.dadosEconomia.atual || 0).toLocaleString('pt-BR')}"></div></div><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosEconomia.meta, o.dadosEconomia.atual, 'units', 'casas')}</div><div>Meta: <span>${formatUnits(o.dadosEconomia.meta, 'casas')}</span></div></div></section><section class="metric-card progress-card"><h3>Avanço Físico (m)</h3><div class="input-area"><label for="input-avance">Metros Executados:</label><div class="input-wrapper"><input type="text" id="input-avance" class="no-symbol" data-obra-id="${o.id}" data-tipo="avance" value="${(o.dadosAvanceFisico.atual || 0).toLocaleString('pt-BR')}"></div></div><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosAvanceFisico.meta, o.dadosAvanceFisico.atual, 'units', 'm')}</div><div>Meta: <span>${formatUnits(o.dadosAvanceFisico.meta, 'm')}</span></div></div></section><section class="metric-card danger-zone"><h3>Zona de Perigo</h3><p>A exclusão de um contrato é permanente.</p><button id="btn-excluir-contrato" data-obra-id="${o.id}">Excluir Contrato</button></section></div>`; contentArea.querySelectorAll('input[type="text"]').forEach(i => { i.addEventListener('input', handleInputFormatting); i.addEventListener('change', handleInputChange); }); document.getElementById('btn-excluir-contrato').addEventListener('click', handleExcluirClick); }
-        
+        // Funções Painel TV
         const handlePainelTVKeyPress = (event) => { if (event.key === 'ArrowRight') proximoSlide(); if (event.key === 'ArrowLeft') slideAnterior(); };
         function proximoSlide() { if (slides.length === 0) return; slides[currentSlide].classList.remove('active'); currentSlide = (currentSlide + 1) % slides.length; slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); }
         function slideAnterior() { if (slides.length === 0) return; slides[currentSlide].classList.remove('active'); currentSlide = (currentSlide - 1 + slides.length) % slides.length; slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); }
         function reiniciarTimerSlideshow() { clearInterval(slideshowInterval); slideshowInterval = setInterval(proximoSlide, 10000); }
-
         function mostrarPainelTV() { const eI = new Date(Date.UTC(2025, 11, 15)), eE = new Date(Date.UTC(2025, 11, 31)), eA = new Date(Date.UTC(2026, 11, 31)); const localToday = new Date(); const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const H = ['2025-10-12', '2025-11-02', '2025-11-15', '2025-12-25', '2026-01-01', '2026-04-03', '2026-04-21', '2026-05-01', '2026-06-04', '2026-09-07', '2026-10-12', '2026-11-02', '2026-11-15', '2026-12-25']; const tI = database.obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0), aI = database.obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0), tE = database.obras.reduce((s, o) => s + o.dadosEconomia.meta, 0), aE = database.obras.reduce((s, o) => s + o.dadosEconomia.atual, 0), tA = database.obras.reduce((s, o) => s + o.dadosAvanceFisico.meta, 0), aA = database.obras.reduce((s, o) => s + o.dadosAvanceFisico.atual, 0); const bDI = getBusinessDaysBetween(today, eI, H), bDE = getBusinessDaysBetween(today, eE, H), bDA = getBusinessDaysBetween(today, eA, H); const dIT = bDI > 0 ? (tI - aI) / bDI : 0, dET = bDE > 0 ? (tE - aE) / bDE : 0, dAT = bDA > 0 ? (tA - aA) / bDA : 0; const pI = calculatePercentage(aI, tI), pE = calculatePercentage(aE, tE), pA = calculatePercentage(aA, tA); contentArea.innerHTML = `<div class="slideshow-wrapper"><div class="slideshow-header"><h1>Painel TV</h1><button class="fullscreen-button" title="Modo Tela Cheia">📺</button></div><div class="slideshow-content"></div><button class="exit-fullscreen-button">Sair</button></div>`; const sC = contentArea.querySelector('.slideshow-content'); sC.innerHTML = `<div class="panel-slide"><h2>Meta de Imobilização</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tI, aI, 'currency')}</div><div>Executado: <span>${formatCurrency(aI)}</span></div><div>Meta Diária: <span>${formatCurrency(dIT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-imob"></div></div>` + `<div class="panel-slide"><h2>Meta de Economias</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tE, aE, 'units', 'casas')}</div><div>Alcançado: <span>${formatUnits(aE, 'casas')}</span></div><div>Meta Diária: <span>${formatUnits(dET, 'casas')}</span></div><div>Dias Úteis: <span>${bDE}</span></div></div><div class="calendars" id="calendars-econ"></div></div>` + `<div class="panel-slide"><h2>Avanço Físico</h2><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tA, aA, 'units', 'm')}</div><div>Executado: <span>${formatUnits(aA, 'm')}</span></div><div>Meta Diária: <span>${formatUnits(dAT, 'm')}</span></div><div>Dias Úteis: <span>${bDA}</span></div></div><div class="calendars" id="calendars-avance"></div></div>`; const { renderAllCalendars } = setupCalendarLogic(H); renderAllCalendars(today, eI, sC.querySelector('#calendars-imob')); renderAllCalendars(today, eE, sC.querySelector('#calendars-econ')); renderAllCalendars(today, eA, sC.querySelector('#calendars-avance')); slides = sC.querySelectorAll('.panel-slide'); currentSlide = 0; if (slides.length > 0) { slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); } document.querySelector('.fullscreen-button').addEventListener('click', enterFullScreenMode); document.querySelector('.exit-fullscreen-button').addEventListener('click', exitFullScreenMode); document.addEventListener('keydown', handlePainelTVKeyPress); }
         function setupCalendarLogic(h) { const holidaySet = new Set(h); function rM(y, m, gC, tED) { const localToday = new Date(); const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const fD = new Date(y, m, 1), dIM = new Date(y, m + 1, 0).getDate(), sDOW = fD.getDay(); let gCs = []; gCs.push('<div class="week-number-header"></div>'); ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].forEach(n => gCs.push(`<div class="day-name">${n}</div>`)); for (let i = 0; i < sDOW; i++) gCs.push('<div class="empty-day"></div>'); for (let d = 1; d <= dIM; d++) { const cD = new Date(Date.UTC(y, m, d)); const cDOW = cD.getUTCDay(); if (cDOW === 0) gCs.push(`<div class="week-number">${gWN(cD)}</div>`); let cls = ['day']; if (cD.getTime() === today.getTime()) { cls.push('today'); } else if (cD < today) { cls.push('past-day'); } if (cD.getTime() === tED.getTime()) { cls.push('end-date'); } else if (cD > today && cD <= tED) { const iso = cD.toISOString().split('T')[0]; if (holidaySet.has(iso)) cls.push('holiday'); else if (cDOW === 0 || cDOW === 6) cls.push('weekend'); else cls.push('future-workday'); } gCs.push(`<div class="${cls.join(' ')}"><span class="day-of-month">${d}</span></div>`); } gC.innerHTML = gCs.join(''); } function gWN(d) { d = new Date(d); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); const yS = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); const wN = Math.ceil((((d - yS) / 864e5) + 1) / 7); return wN; } return { renderAllCalendars: function (s, e, c) { if (!c) return; c.innerHTML = ''; const mN = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]; let cD = new Date(s.getUTCFullYear(), s.getUTCMonth(), 1); while (cD <= e) { const y = cD.getFullYear(), m = cD.getMonth(); const mC = document.createElement('div'); mC.className = 'month'; mC.innerHTML = `<h3>${mN[m]} ${y}</h3><div class="calendar-grid"></div>`; const cG = mC.querySelector('.calendar-grid'); rM(y, m, cG, e); c.appendChild(mC); cD.setMonth(cD.getMonth() + 1); } } }; }
-        function mostrarPaginaComuniqueses() { const cs = database.comuniqueses || []; contentArea.innerHTML = `<div class="content-header"><div><h1>Controle de "Comunique-se"</h1><p>Gestão de prazos e respostas.</p></div><button id="btn-novo-cs" class="btn-primary">+ Novo Comunique-se</button></div><div class="cs-controls"><input type="text" id="cs-search" placeholder="Buscar..."><select id="cs-filter-status"><option value="todos">Todos</option><option value="pendente">Pendentes</option><option value="atrasado">Atrasados</option><option value="respondido">Respondidos</option></select></div><div class="cs-table-wrapper"><table class="cs-table"><thead><tr><th>Protocolo</th><th>Órgão</th><th>Recebimento</th><th>Data Limite</th><th>Status</th><th>Responsável</th><th>Ações</th></tr></thead><tbody id="cs-table-body"></tbody></table></div>`; renderizarTabelaCS(cs); document.getElementById('btn-novo-cs').addEventListener('click', () => abrirModalCS()); document.getElementById('cs-search').addEventListener('input', filtrarTabelaCS); document.getElementById('cs-filter-status').addEventListener('change', filtrarTabelaCS); }
-        function renderizarTabelaCS(cs) { const tB = document.getElementById('cs-table-body'); if (!cs || cs.length === 0) { tB.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum registro.</td></tr>'; return; } tB.innerHTML = cs.map(c => { const { sC, sT, pC } = calcularStatusPrazo(c.dataLimite, c.status); return `<tr><td>${c.protocolo}</td><td>${c.orgaoEmissor}</td><td>${new Date(c.dataRecebimento + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td><td class="${pC}">${new Date(c.dataLimite + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td><td><span class="status-badge ${sC}">${sT}</span></td><td>${c.responsavel || 'N/D'}</td><td class="actions-cell"><button title="Editar" data-id="${c.id}" class="edit-cs-btn">✏️</button></td></tr>`; }).join(''); document.querySelectorAll('.edit-cs-btn').forEach(b => b.addEventListener('click', e => { const id = e.currentTarget.dataset.id; abrirModalCS(id); })); }
+        
+        // --- FUNÇÕES DO COMUNIQUE-SE (COM ALTERAÇÕES) ---
+        function mostrarPaginaComuniqueses() {
+            const cs = database.comuniqueses || [];
+            
+            // Botão e Header da tabela só aparecem se for admin
+            const adminButton = isAdmin ? '<button id="btn-novo-cs" class="btn-primary">+ Novo Comunique-se</button>' : '';
+            const adminHeader = isAdmin ? '<th>Ações</th>' : '';
+            
+            contentArea.innerHTML = `
+            <div class="content-header">
+                <div><h1>Controle de "Comunique-se"</h1><p>Gestão de prazos e respostas.</p></div>
+                ${adminButton}
+            </div>
+            <div class="cs-controls">
+                <input type="text" id="cs-search" placeholder="Buscar...">
+                <select id="cs-filter-status">
+                    <option value="todos">Todos</option>
+                    <option value="pendente">Pendentes</option>
+                    <option value="atrasado">Atrasados</option>
+                    <option value="respondido">Respondidos</option>
+                </select>
+            </div>
+            <div class="cs-table-wrapper">
+                <table class="cs-table">
+                    <thead>
+                        <tr>
+                            <th>Protocolo</th>
+                            <th>Órgão</th>
+                            <th>Recebimento</th>
+                            <th>Data Limite</th>
+                            <th>Status</th>
+                            <th>Responsável</th>
+                            ${adminHeader}
+                        </tr>
+                    </thead>
+                    <tbody id="cs-table-body"></tbody>
+                </table>
+            </div>`;
+            
+            renderizarTabelaCS(cs);
+            
+            // Só adiciona o listener do botão 'novo' se for admin
+            if (isAdmin) {
+                document.getElementById('btn-novo-cs').addEventListener('click', () => abrirModalCS());
+            }
+            document.getElementById('cs-search').addEventListener('input', filtrarTabelaCS);
+            document.getElementById('cs-filter-status').addEventListener('change', filtrarTabelaCS);
+        }
+        
+        function renderizarTabelaCS(cs) {
+            const tB = document.getElementById('cs-table-body');
+            if (!cs || cs.length === 0) {
+                // Ajustada a coluna (colspan)
+                tB.innerHTML = `<tr><td colspan="${isAdmin ? 7 : 6}" style="text-align:center;">Nenhum registro.</td></tr>`;
+                return;
+            }
+            tB.innerHTML = cs.map(c => {
+                const { sC, sT, pC } = calcularStatusPrazo(c.dataLimite, c.status);
+                // Célula de ações só é criada se for admin
+                const actionsCell = isAdmin ? `<td class="actions-cell"><button title="Editar" data-id="${c.id}" class="edit-cs-btn">✏️</button></td>` : '';
+                return `
+                    <tr>
+                        <td>${c.protocolo}</td>
+                        <td>${c.orgaoEmissor}</td>
+                        <td>${new Date(c.dataRecebimento + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
+                        <td class="${pC}">${new Date(c.dataLimite + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
+                        <td><span class="status-badge ${sC}">${sT}</span></td>
+                        <td>${c.responsavel || 'N/D'}</td>
+                        ${actionsCell}
+                    </tr>
+                `;
+            }).join('');
+            
+            // Só adiciona listeners de edição se for admin
+            if (isAdmin) {
+                document.querySelectorAll('.edit-cs-btn').forEach(b => b.addEventListener('click', e => {
+                    const id = e.currentTarget.dataset.id;
+                    abrirModalCS(id);
+                }));
+            }
+        }
         function calcularStatusPrazo(dL, s) { if (s === 'Respondido') return { sC: 'respondido', sT: 'Respondido', pC: '' }; const localToday = new Date(); const hoje = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const p = new Date(dL + 'T00:00:00'); const dD = (p - hoje) / 864e5; if (dD < 0) return { sC: 'atrasado', sT: 'Atrasado', pC: 'prazo-vencido' }; if (dD <= 7) return { sC: 'pendente', sT: 'Pendente', pC: 'prazo-atencao' }; return { sC: 'pendente', sT: 'Pendente', pC: '' }; }
         function filtrarTabelaCS() { const tB = document.getElementById('cs-search').value.toLowerCase(), sF = document.getElementById('cs-filter-status').value; const cF = (database.comuniqueses || []).filter(c => { const sI = calcularStatusPrazo(c.dataLimite, c.status); const cS = (sF === 'todos') || (sF === sI.sT.toLowerCase()); const cB = (c.protocolo.toLowerCase().includes(tB) || c.orgaoEmissor.toLowerCase().includes(tB) || c.assunto.toLowerCase().includes(tB)); return cS && cB; }); renderizarTabelaCS(cF); }
-        async function carregarDados() { try { const r = await fetch(JSONBIN_URL, { headers: { 'X-Master-Key': API_KEY } }); if (!r.ok) throw new Error(`Falha na rede: ${r.status}`); const d = await r.json(); database = d.record; if (!database.obras) database.obras = []; if (!database.comuniqueses) database.comuniqueses = []; gerarNavegacao(database.obras); mostrarPainelTV(); } catch (e) { console.error("Erro fatal:", e); contentArea.innerHTML = `<h1>Erro</h1><p>Não foi possível conectar. Verifique URL/Chave e conexão. Detalhes: ${e.message}</p>`; } }
-        let saveTimeout; function salvarDados(fU = false) { clearTimeout(saveTimeout); saveTimeout = setTimeout(async () => { console.log("Salvando..."); try { const r = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY }, body: JSON.stringify(database) }); if (!r.ok) throw new Error('Falha ao salvar.'); console.log("Salvo!"); if (fU) { const aL = navList.querySelector('a.active'); if (aL) aL.click(); } } catch (e) { console.error("Erro ao salvar:", e); alert("Não foi possível salvar."); } }, 1500); }
-        function handleNavClick(e) { e.preventDefault(); document.removeEventListener('keydown', handlePainelTVKeyPress); clearInterval(slideshowInterval); const id = e.target.dataset.id; const cA = navList.querySelector('a.active'); if (cA) cA.classList.remove('active'); e.target.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen(); sidebar.classList.remove('hidden'); contentArea.classList.remove('fullscreen'); if (id === 'visao-geral') mostrarVisaoGeral(database.obras); else if (id === 'painel-tv') mostrarPainelTV(); else if (id === 'comuniqueses') mostrarPaginaComuniqueses(); else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); } }
+        
+        // --- Funções de Dados e Navegação
+        async function carregarDados() { 
+            try { 
+                const r = await fetch(JSONBIN_URL, { headers: { 'X-Master-Key': API_KEY } }); 
+                if (!r.ok) throw new Error(`Falha na rede: ${r.status}`); 
+                const d = await r.json(); 
+                database = d.record; 
+                if (!database.obras) database.obras = []; 
+                if (!database.comuniqueses) database.comuniqueses = []; 
+                gerarNavegacao(database.obras); 
+                // [ALTERAÇÃO] Verifica se tem um link ativo, se não, vai pro painel-tv
+                const linkAtivo = navList.querySelector('a.active');
+                if (linkAtivo) {
+                    linkAtivo.click();
+                } else {
+                    mostrarPainelTV();
+                }
+            } catch (e) { 
+                console.error("Erro fatal:", e); 
+                // Mostra o erro mas mantém a estrutura básica
+                contentArea.innerHTML = `<div class="content-header"><div><h1>Erro ao Carregar Dados</h1><p>Não foi possível conectar. Verifique URL/Chave e conexão. Detalhes: ${e.message}</p></div></div>`;
+            } 
+        }
+        
+        let saveTimeout;
+        function salvarDados(fU = false) {
+            // Impede o salvamento se não for admin
+            if (!isAdmin) {
+                console.warn("Modo de leitura. Salvamento bloqueado.");
+                return;
+            }
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => { 
+                console.log("Salvando..."); 
+                try { 
+                    const r = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY }, body: JSON.stringify(database) }); 
+                    if (!r.ok) throw new Error('Falha ao salvar.'); 
+                    console.log("Salvo!"); 
+                    if (fU) { 
+                        const aL = navList.querySelector('a.active'); 
+                        if (aL) aL.click(); 
+                    } 
+                } catch (e) { 
+                    console.error("Erro ao salvar:", e); 
+                    alert("Não foi possível salvar."); 
+                } 
+            }, 1500);
+        }
+        
+        function handleNavClick(e) { 
+            e.preventDefault(); 
+            document.removeEventListener('keydown', handlePainelTVKeyPress); 
+            clearInterval(slideshowInterval); 
+            const id = e.target.dataset.id; 
+            const cA = navList.querySelector('a.active'); 
+            if (cA) cA.classList.remove('active'); 
+            e.target.classList.add('active'); 
+            if (document.fullscreenElement) document.exitFullscreen(); 
+            sidebar.classList.remove('hidden'); 
+            contentArea.classList.remove('fullscreen'); 
+            if (id === 'visao-geral') mostrarVisaoGeral(database.obras); 
+            else if (id === 'painel-tv') mostrarPainelTV(); 
+            else if (id === 'comuniqueses') mostrarPaginaComuniqueses(); 
+            else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); } 
+        }
+        
+        // --- Handlers de Input (só serão chamados se isAdmin) ---
         function handleInputChange(e) { const i = e.target, oId = i.dataset.obraId, t = i.dataset.tipo; let vN = parseFloat(i.value.replace(/\./g, '').replace(',', '.')) || 0; const o = database.obras.find(x => x.id === oId); if (!o) return; switch (t) { case 'imobilizacao': o.dadosImobilizacao.atual = vN; break; case 'economia': o.dadosEconomia.atual = Math.round(vN); break; case 'avance': o.dadosAvanceFisico.atual = Math.round(vN); break; } salvarDados(); }
         function handleInputFormatting(e) { const i = e.target, t = i.dataset.tipo; let v = i.value.replace(/\D/g, ''); if (v === '') { i.value = ''; return; } if (t.includes('imobilizacao')) { const nV = parseInt(v, 10) / 100; i.value = nV.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); } else { i.value = parseInt(v, 10).toLocaleString('pt-BR'); } }
         function handleExcluirClick(e) { const oId = e.target.dataset.obraId; const o = database.obras.find(x => x.id === oId); if (!o) return; if (confirm(`Excluir "${o.nomeCompleto}"?\nAção permanente.`)) { const idx = database.obras.findIndex(x => x.id === oId); if (idx > -1) { database.obras.splice(idx, 1); salvarDados(true); gerarNavegacao(database.obras); navList.querySelector('a[data-id="visao-geral"]').click(); } } }
-        const modalObras = document.getElementById('modal-novo-contrato'); const btnAddObra = document.getElementById('btn-adicionar-contrato'); const formObras = modalObras.querySelector('form'); modalObras.querySelectorAll('.close-button').forEach(b => b.addEventListener('click', () => fecharModal(modalObras, formObras))); modalObras.addEventListener('click', e => { if (e.target === modalObras) fecharModal(modalObras, formObras); }); btnAddObra.addEventListener('click', () => abrirModal(modalObras)); formObras.addEventListener('submit', e => { e.preventDefault(); const nO = { id: `obra-${Date.now()}`, nomeCurto: formObras.querySelector('#nome-curto').value, nomeCompleto: formObras.querySelector('#nome-completo').value, dadosImobilizacao: { meta: parseFloat(formObras.querySelector('#meta-imob').value) || 0, atual: 0 }, dadosEconomia: { meta: parseInt(formObras.querySelector('#meta-econ').value, 10) || 0, atual: 0 }, dadosAvanceFisico: { meta: parseInt(formObras.querySelector('#meta-avance').value, 10) || 0, atual: 0 } }; database.obras.push(nO); salvarDados(true); gerarNavegacao(database.obras); fecharModal(modalObras, formObras); navList.querySelector('a[data-id="visao-geral"]').click(); });
-        const modalCS = document.getElementById('modal-comuniquese'); const formCS = document.getElementById('form-comuniquese'); modalCS.querySelectorAll('.close-button').forEach(b => b.addEventListener('click', () => fecharModal(modalCS, formCS))); modalCS.addEventListener('click', e => { if (e.target === modalCS) fecharModal(modalCS, formCS); });
-        function abrirModalCS(id = null) { formCS.reset(); const title = modalCS.querySelector('#modal-cs-title'); if (id) { const c = database.comuniqueses.find(x => x.id === id); if (!c) return; title.textContent = "Editar Comunique-se"; document.getElementById('cs-id').value = c.id; document.getElementById('cs-protocolo').value = c.protocolo; document.getElementById('cs-orgao').value = c.orgaoEmissor; document.getElementById('cs-data-recebimento').value = c.dataRecebimento; document.getElementById('cs-prazo-dias').value = c.prazoDias; document.getElementById('cs-assunto').value = c.assunto; document.getElementById('cs-responsavel').value = c.responsavel; document.getElementById('cs-status').value = c.status; document.getElementById('cs-data-resposta').value = c.dataResposta || ''; document.getElementById('cs-oficio-resposta').value = c.oficioResposta || ''; document.getElementById('cs-observacao').value = c.observacao || ''; } else { title.textContent = "Novo Comunique-se"; document.getElementById('cs-id').value = ''; } abrirModal(modalCS); }
-        formCS.addEventListener('submit', e => { e.preventDefault(); const id = document.getElementById('cs-id').value; const dR = new Date(document.getElementById('cs-data-recebimento').value + 'T00:00:00'); const pD = parseInt(document.getElementById('cs-prazo-dias').value, 10); dR.setDate(dR.getDate() + pD); const dL = dR.toISOString().split('T')[0]; const cD = { protocolo: document.getElementById('cs-protocolo').value, orgaoEmissor: document.getElementById('cs-orgao').value, dataRecebimento: document.getElementById('cs-data-recebimento').value, prazoDias: pD, dataLimite: dL, assunto: document.getElementById('cs-assunto').value, responsavel: document.getElementById('cs-responsavel').value, status: document.getElementById('cs-status').value, dataResposta: document.getElementById('cs-data-resposta').value || null, oficioResposta: document.getElementById('cs-oficio-resposta').value || '', observacao: document.getElementById('cs-observacao').value || '', }; if (id) { const idx = database.comuniqueses.findIndex(c => c.id === id); if (idx > -1) database.comuniqueses[idx] = { ...database.comuniqueses[idx], ...cD }; } else { cD.id = `com-${Date.now()}`; database.comuniqueses.push(cD); } salvarDados(true); fecharModal(modalCS, formCS); });
+        
+        // --- Configuração dos Modais ---
+        const modalObras = document.getElementById('modal-novo-contrato');
+        const formObras = document.getElementById('form-novo-contrato');
+        const btnAddObra = document.getElementById('btn-adicionar-contrato');
+        modalObras.querySelectorAll('.close-button').forEach(b => b.addEventListener('click', () => fecharModal(modalObras, formObras)));
+        modalObras.addEventListener('click', e => { if (e.target === modalObras) fecharModal(modalObras, formObras); });
+        
+        // Só permite adicionar/salvar obras se for admin
+        if (!isAdmin) {
+            btnAddObra.style.display = 'none';
+        } else {
+            btnAddObra.addEventListener('click', () => abrirModal(modalObras));
+            formObras.addEventListener('submit', e => {
+                e.preventDefault();
+                const nO = { id: `obra-${Date.now()}`, nomeCurto: formObras.querySelector('#nome-curto').value, nomeCompleto: formObras.querySelector('#nome-completo').value, dadosImobilizacao: { meta: parseFloat(formObras.querySelector('#meta-imob').value) || 0, atual: 0 }, dadosEconomia: { meta: parseInt(formObras.querySelector('#meta-econ').value, 10) || 0, atual: 0 }, dadosAvanceFisico: { meta: parseInt(formObras.querySelector('#meta-avance').value, 10) || 0, atual: 0 } };
+                database.obras.push(nO);
+                salvarDados(true);
+                gerarNavegacao(database.obras);
+                fecharModal(modalObras, formObras);
+                navList.querySelector('a[data-id="visao-geral"]').click();
+            });
+        }
+
+        const modalCS = document.getElementById('modal-comuniquese');
+        const formCS = document.getElementById('form-comuniquese');
+        modalCS.querySelectorAll('.close-button').forEach(b => b.addEventListener('click', () => fecharModal(modalCS, formCS)));
+        modalCS.addEventListener('click', e => { if (e.target === modalCS) fecharModal(modalCS, formCS); });
+        
+        function abrirModalCS(id = null) {
+            // Só abre o modal se for admin
+            if (!isAdmin) return;
+            
+            formCS.reset();
+            const title = modalCS.querySelector('#modal-cs-title');
+            if (id) { const c = database.comuniqueses.find(x => x.id === id); if (!c) return; title.textContent = "Editar Comunique-se"; document.getElementById('cs-id').value = c.id; document.getElementById('cs-protocolo').value = c.protocolo; document.getElementById('cs-orgao').value = c.orgaoEmissor; document.getElementById('cs-data-recebimento').value = c.dataRecebimento; document.getElementById('cs-prazo-dias').value = c.prazoDias; document.getElementById('cs-assunto').value = c.assunto; document.getElementById('cs-responsavel').value = c.responsavel; document.getElementById('cs-status').value = c.status; document.getElementById('cs-data-resposta').value = c.dataResposta || ''; document.getElementById('cs-oficio-resposta').value = c.oficioResposta || ''; document.getElementById('cs-observacao').value = c.observacao || ''; } else { title.textContent = "Novo Comunique-se"; document.getElementById('cs-id').value = ''; }
+            abrirModal(modalCS);
+        }
+        
+        // Só adiciona o listener de submit se for admin
+        if (isAdmin) {
+            formCS.addEventListener('submit', e => {
+                e.preventDefault();
+                const id = document.getElementById('cs-id').value;
+                const dR = new Date(document.getElementById('cs-data-recebimento').value + 'T00:00:00');
+                const pD = parseInt(document.getElementById('cs-prazo-dias').value, 10);
+                dR.setDate(dR.getDate() + pD);
+                const dL = dR.toISOString().split('T')[0];
+                const cD = { protocolo: document.getElementById('cs-protocolo').value, orgaoEmissor: document.getElementById('cs-orgao').value, dataRecebimento: document.getElementById('cs-data-recebimento').value, prazoDias: pD, dataLimite: dL, assunto: document.getElementById('cs-assunto').value, responsavel: document.getElementById('cs-responsavel').value, status: document.getElementById('cs-status').value, dataResposta: document.getElementById('cs-data-resposta').value || null, oficioResposta: document.getElementById('cs-oficio-resposta').value || '', observacao: document.getElementById('cs-observacao').value || '', };
+                if (id) { const idx = database.comuniqueses.findIndex(c => c.id === id); if (idx > -1) database.comuniqueses[idx] = { ...database.comuniqueses[idx], ...cD }; } else { cD.id = `com-${Date.now()}`; database.comuniqueses.push(cD); }
+                salvarDados(true);
+                fecharModal(modalCS, formCS);
+            });
+        }
+        
+        // Funções de Modal e Fullscreen
         function abrirModal(m) { m.classList.add('active'); } function fecharModal(m, f) { m.classList.remove('active'); if (f) f.reset(); }
         function enterFullScreenMode() { sidebar.classList.add('hidden'); contentArea.classList.add('fullscreen'); document.documentElement.requestFullscreen().catch(e => console.error(e)); }
         function exitFullScreenMode() { if (document.fullscreenElement) document.exitFullscreen(); sidebar.classList.remove('hidden'); contentArea.classList.remove('fullscreen'); }
         document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) exitFullScreenMode(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.fullscreenElement) exitFullScreenMode(); });
         
+        // Inicia a aplicação
         carregarDados();
     });
     </script>
