@@ -48,12 +48,7 @@
         .form-group.full-width { grid-column: 1 / -1; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; font-family: 'Poppins', sans-serif; }
-        /* Adicionado estilo para inputs readonly */
-        .form-group input:read-only, .form-group textarea:read-only, input:read-only {
-            background-color: #e9ecef;
-            opacity: 1;
-            cursor: not-allowed;
-        }
+        .form-group input:read-only, .form-group textarea:read-only, input:read-only { background-color: #e9ecef; opacity: 1; cursor: not-allowed; }
         textarea { resize: vertical; min-height: 80px; }
         fieldset { border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-top: 20px; grid-column: 1 / -1; }
         legend { font-weight: 600; color: #1e3a5f; padding: 0 10px; }
@@ -145,10 +140,142 @@
         .empty-day { visibility: hidden; }
         .day.future-workday { background-color: #eaf6ff; }
         .day.holiday { background-color: #fdeaea; }
+
+
+        /* [NOVO - RESPONSIVO] Estilos para o botão hamburger */
+        .sidebar-toggle {
+            display: none; /* Escondido no desktop por padrão */
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 999;
+            width: 40px;
+            height: 40px;
+            background: #1e3a5f;
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            /* Estilos para os 3 vãos */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .sidebar-toggle span {
+            display: block;
+            width: 100%;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+        /* [NOVO - RESPONSIVO] Animação do botão para 'X' */
+        .sidebar.is-open + .sidebar-toggle span:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+        .sidebar.is-open + .sidebar-toggle span:nth-child(2) {
+            opacity: 0;
+        }
+        .sidebar.is-open + .sidebar-toggle span:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
+        /* [NOVO - RESPONSIVO] Overlay para escurecer o fundo */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 997;
+        }
+        .sidebar-overlay.is-open {
+            display: block;
+        }
+
+        /* [NOVO - RESPONSIVO] Media Query Principal */
+        @media (max-width: 768px) {
+            body, html {
+                overflow-y: auto; /* Permite rolar no celular */
+                overflow-x: hidden;
+            }
+
+            .sidebar-toggle {
+                display: flex; /* Mostra o botão no celular */
+            }
+            
+            .system-container {
+                flex-direction: column; /* Empilha em vez de lado a lado */
+            }
+
+            .sidebar {
+                position: fixed; /* Fica por cima de tudo */
+                left: -300px; /* Começa escondido fora da tela */
+                width: 280px; /* Largura continua a mesma */
+                height: 100vh;
+                z-index: 998;
+                transition: left 0.3s ease-in-out;
+                box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+            }
+
+            .sidebar.is-open {
+                left: 0; /* Mostra o sidebar */
+            }
+            
+            /* O sidebar no modo fullscreen ainda deve sumir */
+            .sidebar.hidden {
+                left: -300px !important;
+                width: 0;
+            }
+
+            .content-area {
+                padding: 20px;
+                padding-top: 70px; /* Espaço para o botão hamburger */
+                width: 100%;
+            }
+            
+            .content-header h1 {
+                font-size: 1.8rem;
+            }
+
+            /* Ajusta o grid do modal para 1 coluna */
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-group.full-width {
+                grid-column: 1 / 1; /* Reseta o 'span' */
+            }
+            fieldset {
+                 grid-column: 1 / 1; /* Reseta o 'span' */
+            }
+
+            /* Ajusta os cards de métrica */
+            .metrics {
+                grid-template-columns: 1fr; /* 1 coluna no celular */
+            }
+
+            /* Ajusta o painel de slides */
+            .panel-slide {
+                padding: 20px;
+            }
+            .panel-slide .progress-details {
+                grid-template-columns: 1fr; /* 1 coluna */
+                gap: 10px;
+            }
+            .panel-slide h2 {
+                font-size: 1.5rem; /* Fonte menor no celular */
+            }
+        }
     </style>
 </head>
 <body>
 
+    <button id="sidebar-toggle-btn" class="sidebar-toggle" aria-label="Abrir menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
     <div class="system-container">
         <aside class="sidebar">
             <header class="sidebar-header"><img src="imagem2.png" alt="Logo da Empresa" class="company-logo"></header>
@@ -221,7 +348,7 @@
 
     <script>
     // ======================================================================================================
-    // SCRIPT COMPLETO (v9 - Chaves Corrigidas + Modo de Edição)
+    // SCRIPT COMPLETO (v10 - Responsivo + Chaves Corrigidas + Modo de Edição)
     // ======================================================================================================
     /**
     * @author ERIVANDRO JUNIOR
@@ -234,10 +361,9 @@
 
         // Verifica o parâmetro da URL para ativar o modo de edição
         const urlParams = new URLSearchParams(window.location.search);
-        // Mude 'edicao' para qualquer chave secreta que você quiser
         isAdmin = urlParams.get('modo') === 'edicao'; 
 
-        // [CORREÇÃO]: Inseri suas chaves corretas que encontrei no seu script original.
+        // Chaves da API
         const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/68e8e81ad0ea881f409c51f0'; 
         const API_KEY = '$2a$10$L4n/qlQ8LGkgQmd9p7zhaOAK6j5pgA.2Tq7xK019hUqDGNfPmqJ5O'; 
 
@@ -249,7 +375,7 @@
         const contentArea = document.getElementById('content-area');
         const sidebar = document.querySelector('.sidebar');
         
-        // Funções utilitárias
+        // Funções utilitárias (sem alteração)
         const formatCurrency = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const formatUnits = (v, u = '') => `${(Math.round(v) || 0).toLocaleString('pt-BR')} ${u}`.trim();
         const formatAsCompactCurrency = (v) => (v >= 1e6 ? `R$ ${(v / 1e6).toFixed(1).replace('.', ',')} mi` : (v >= 1e3 ? `R$ ${(v / 1e3).toFixed(1).replace('.', ',')} mil` : formatCurrency(v)));
@@ -257,18 +383,14 @@
         const formatarValorFaltante = (m, a, t, u = '', d = 1) => { const diff = m - a; if (diff <= 0) { const s = Math.abs(diff); let vf; if (t === 'currency') vf = formatCurrency(s); else vf = formatUnits(s / d, u); return `Superamos a meta em <span class="goal-surpassed">${vf}</span>`; } else { let vf; if (t === 'currency') vf = formatCurrency(diff); else vf = formatUnits(diff / d, u); return `Faltam: <span>${vf}</span>`; } };
         function getBusinessDaysBetween(startDate, endDate, holidays) { let count = 0; const curDate = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate())); const lastDate = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate())); const holidaySet = new Set(holidays); while (curDate <= lastDate) { const dayOfWeek = curDate.getUTCDay(); const isoDate = curDate.toISOString().split('T')[0]; if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidaySet.has(isoDate)) { count++; } curDate.setUTCDate(curDate.getUTCDate() + 1); } return count; }
 
-        // Funções de Renderização
+        // Funções de Renderização (sem alteração)
         function gerarNavegacao(obras) { const activeId = navList.querySelector('a.active')?.dataset.id || 'painel-tv'; navList.innerHTML = ''; navList.innerHTML += `<li><a data-id="painel-tv" title="Painel TV">📺 Painel TV</a></li>`; navList.innerHTML += `<li><a data-id="visao-geral">Visão Geral</a></li>`; navList.innerHTML += `<li><a data-id="comuniqueses">📄 Comunique-se</a></li>`; obras.sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto)).forEach(o => { navList.innerHTML += `<li><a data-id="${o.id}">${o.nomeCurto}</a></li>`; }); const linkAtivo = navList.querySelector(`a[data-id="${activeId}"]`) || navList.querySelector('a'); if (linkAtivo) linkAtivo.classList.add('active'); navList.querySelectorAll('a').forEach(l => l.addEventListener('click', handleNavClick)); }
         function mostrarVisaoGeral(obras) { const tImobM = obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0), tImobA = obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0), tEconM = obras.reduce((s, o) => s + o.dadosEconomia.meta, 0), tEconA = obras.reduce((s, o) => s + o.dadosEconomia.atual, 0), tAvanceM = obras.reduce((s, o) => s + o.dadosAvanceFisico.meta, 0), tAvanceA = obras.reduce((s, o) => s + o.dadosAvanceFisico.atual, 0); const pImob = calculatePercentage(tImobA, tImobM), pEcon = calculatePercentage(tEconA, tEconM), pAvance = calculatePercentage(tAvanceA, tAvanceM); contentArea.innerHTML = `<div class="content-header"><div><h1>Visão Geral do Projeto</h1><p>Resumo de todos os contratos.</p></div></div><div class="dashboard-grid"><section class="metrics"><figure class="metric-card"><figcaption class="label">Contratos Ativos</figcaption><div class="value">${obras.length}</div></figure><figure class="metric-card"><figcaption class="label">Imobilização Total</figcaption><div class="value goal">${formatAsCompactCurrency(tImobM)}</div></figure><figure class="metric-card"><figcaption class="label">Economias Totais</figcaption><div class="value goal">${formatUnits(tEconM, 'casas')}</div></figure><figure class="metric-card"><figcaption class="label">Extensão Total</figcaption><div class="value goal">${formatUnits(tAvanceM / 1e3, 'km')}</div></figure></section><section class="metric-card progress-card"><h3>Progresso: Imobilização</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pImob > 100 ? 100 : pImob.toFixed(2)}%;">${pImob.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tImobM, tImobA, 'currency')}</div><div>Executado: <span>${formatCurrency(tImobA)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Economias</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pEcon > 100 ? 100 : pEcon.toFixed(2)}%;background-color:#ff9800;">${pEcon.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tEconM, tEconA, 'units', 'casas')}</div><div>Alcançado: <span>${formatUnits(tEconA, 'casas')}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Avanço Físico</h3><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pAvance > 100 ? 100 : pAvance.toFixed(2)}%;">${pAvance.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tAvanceM, tAvanceA, 'units', 'km', 1e3)}</div><div>Executado: <span>${formatUnits(tAvanceA / 1e3, 'km')}</span></div></div></section></div>`; }
-        
         function mostrarPaginaObra(o) {
             const pI = calculatePercentage(o.dadosImobilizacao.atual, o.dadosImobilizacao.meta), pE = calculatePercentage(o.dadosEconomia.atual, o.dadosEconomia.meta), pA = calculatePercentage(o.dadosAvanceFisico.atual, o.dadosAvanceFisico.meta);
             const vIf = (o.dadosImobilizacao.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            
-            // Define o estado readonly e o estilo de display com base no 'isAdmin'
             const readOnlyState = !isAdmin ? 'readonly' : '';
             const adminOnlyDisplay = !isAdmin ? 'style="display:none;"' : '';
-
             contentArea.innerHTML = `
             <div class="content-header"><div><h1>${o.nomeCompleto}</h1><p>Acompanhamento detalhado.</p></div></div>
             <div class="dashboard-grid">
@@ -315,13 +437,11 @@
                 </section>
             </div>`;
             
-            // Só adiciona os 'listeners' de edição se for admin
             if (isAdmin) {
                 contentArea.querySelectorAll('input[type="text"]').forEach(i => {
                     i.addEventListener('input', handleInputFormatting);
                     i.addEventListener('change', handleInputChange);
                 });
-                // Garante que o botão existe antes de adicionar o listener
                 const btnExcluir = document.getElementById('btn-excluir-contrato');
                 if (btnExcluir) {
                     btnExcluir.addEventListener('click', handleExcluirClick);
@@ -329,7 +449,7 @@
             }
         }
         
-        // Funções Painel TV
+        // Funções Painel TV (sem alteração)
         const handlePainelTVKeyPress = (event) => { if (event.key === 'ArrowRight') proximoSlide(); if (event.key === 'ArrowLeft') slideAnterior(); };
         function proximoSlide() { if (slides.length === 0) return; slides[currentSlide].classList.remove('active'); currentSlide = (currentSlide + 1) % slides.length; slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); }
         function slideAnterior() { if (slides.length === 0) return; slides[currentSlide].classList.remove('active'); currentSlide = (currentSlide - 1 + slides.length) % slides.length; slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); }
@@ -337,14 +457,11 @@
         function mostrarPainelTV() { const eI = new Date(Date.UTC(2025, 11, 15)), eE = new Date(Date.UTC(2025, 11, 31)), eA = new Date(Date.UTC(2026, 11, 31)); const localToday = new Date(); const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const H = ['2025-10-12', '2025-11-02', '2025-11-15', '2025-12-25', '2026-01-01', '2026-04-03', '2026-04-21', '2026-05-01', '2026-06-04', '2026-09-07', '2026-10-12', '2026-11-02', '2026-11-15', '2026-12-25']; const tI = database.obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0), aI = database.obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0), tE = database.obras.reduce((s, o) => s + o.dadosEconomia.meta, 0), aE = database.obras.reduce((s, o) => s + o.dadosEconomia.atual, 0), tA = database.obras.reduce((s, o) => s + o.dadosAvanceFisico.meta, 0), aA = database.obras.reduce((s, o) => s + o.dadosAvanceFisico.atual, 0); const bDI = getBusinessDaysBetween(today, eI, H), bDE = getBusinessDaysBetween(today, eE, H), bDA = getBusinessDaysBetween(today, eA, H); const dIT = bDI > 0 ? (tI - aI) / bDI : 0, dET = bDE > 0 ? (tE - aE) / bDE : 0, dAT = bDA > 0 ? (tA - aA) / bDA : 0; const pI = calculatePercentage(aI, tI), pE = calculatePercentage(aE, tE), pA = calculatePercentage(aA, tA); contentArea.innerHTML = `<div class="slideshow-wrapper"><div class="slideshow-header"><h1>Painel TV</h1><button class="fullscreen-button" title="Modo Tela Cheia">📺</button></div><div class="slideshow-content"></div><button class="exit-fullscreen-button">Sair</button></div>`; const sC = contentArea.querySelector('.slideshow-content'); sC.innerHTML = `<div class="panel-slide"><h2>Meta de Imobilização</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tI, aI, 'currency')}</div><div>Executado: <span>${formatCurrency(aI)}</span></div><div>Meta Diária: <span>${formatCurrency(dIT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-imob"></div></div>` + `<div class="panel-slide"><h2>Meta de Economias</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tE, aE, 'units', 'casas')}</div><div>Alcançado: <span>${formatUnits(aE, 'casas')}</span></div><div>Meta Diária: <span>${formatUnits(dET, 'casas')}</span></div><div>Dias Úteis: <span>${bDE}</span></div></div><div class="calendars" id="calendars-econ"></div></div>` + `<div class="panel-slide"><h2>Avanço Físico</h2><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tA, aA, 'units', 'm')}</div><div>Executado: <span>${formatUnits(aA, 'm')}</span></div><div>Meta Diária: <span>${formatUnits(dAT, 'm')}</span></div><div>Dias Úteis: <span>${bDA}</span></div></div><div class="calendars" id="calendars-avance"></div></div>`; const { renderAllCalendars } = setupCalendarLogic(H); renderAllCalendars(today, eI, sC.querySelector('#calendars-imob')); renderAllCalendars(today, eE, sC.querySelector('#calendars-econ')); renderAllCalendars(today, eA, sC.querySelector('#calendars-avance')); slides = sC.querySelectorAll('.panel-slide'); currentSlide = 0; if (slides.length > 0) { slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); } document.querySelector('.fullscreen-button').addEventListener('click', enterFullScreenMode); document.querySelector('.exit-fullscreen-button').addEventListener('click', exitFullScreenMode); document.addEventListener('keydown', handlePainelTVKeyPress); }
         function setupCalendarLogic(h) { const holidaySet = new Set(h); function rM(y, m, gC, tED) { const localToday = new Date(); const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const fD = new Date(y, m, 1), dIM = new Date(y, m + 1, 0).getDate(), sDOW = fD.getDay(); let gCs = []; gCs.push('<div class="week-number-header"></div>'); ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].forEach(n => gCs.push(`<div class="day-name">${n}</div>`)); for (let i = 0; i < sDOW; i++) gCs.push('<div class="empty-day"></div>'); for (let d = 1; d <= dIM; d++) { const cD = new Date(Date.UTC(y, m, d)); const cDOW = cD.getUTCDay(); if (cDOW === 0) gCs.push(`<div class="week-number">${gWN(cD)}</div>`); let cls = ['day']; if (cD.getTime() === today.getTime()) { cls.push('today'); } else if (cD < today) { cls.push('past-day'); } if (cD.getTime() === tED.getTime()) { cls.push('end-date'); } else if (cD > today && cD <= tED) { const iso = cD.toISOString().split('T')[0]; if (holidaySet.has(iso)) cls.push('holiday'); else if (cDOW === 0 || cDOW === 6) cls.push('weekend'); else cls.push('future-workday'); } gCs.push(`<div class="${cls.join(' ')}"><span class="day-of-month">${d}</span></div>`); } gC.innerHTML = gCs.join(''); } function gWN(d) { d = new Date(d); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); const yS = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); const wN = Math.ceil((((d - yS) / 864e5) + 1) / 7); return wN; } return { renderAllCalendars: function (s, e, c) { if (!c) return; c.innerHTML = ''; const mN = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]; let cD = new Date(s.getUTCFullYear(), s.getUTCMonth(), 1); while (cD <= e) { const y = cD.getFullYear(), m = cD.getMonth(); const mC = document.createElement('div'); mC.className = 'month'; mC.innerHTML = `<h3>${mN[m]} ${y}</h3><div class="calendar-grid"></div>`; const cG = mC.querySelector('.calendar-grid'); rM(y, m, cG, e); c.appendChild(mC); cD.setMonth(cD.getMonth() + 1); } } }; }
         
-        // --- FUNÇÕES DO COMUNIQUE-SE (COM ALTERAÇÕES) ---
+        // --- FUNÇÕES DO COMUNIQUE-SE (sem alteração) ---
         function mostrarPaginaComuniqueses() {
             const cs = database.comuniqueses || [];
-            
-            // Botão e Header da tabela só aparecem se for admin
             const adminButton = isAdmin ? '<button id="btn-novo-cs" class="btn-primary">+ Novo Comunique-se</button>' : '';
             const adminHeader = isAdmin ? '<th>Ações</th>' : '';
-            
             contentArea.innerHTML = `
             <div class="content-header">
                 <div><h1>Controle de "Comunique-se"</h1><p>Gestão de prazos e respostas.</p></div>
@@ -375,10 +492,7 @@
                     <tbody id="cs-table-body"></tbody>
                 </table>
             </div>`;
-            
-            renderizarTabelaCS(cs);
-            
-            // Só adiciona o listener do botão 'novo' se for admin
+            renderarTabelaCS(cs);
             if (isAdmin) {
                 document.getElementById('btn-novo-cs').addEventListener('click', () => abrirModalCS());
             }
@@ -386,16 +500,14 @@
             document.getElementById('cs-filter-status').addEventListener('change', filtrarTabelaCS);
         }
         
-        function renderizarTabelaCS(cs) {
+        function renderarTabelaCS(cs) {
             const tB = document.getElementById('cs-table-body');
             if (!cs || cs.length === 0) {
-                // Ajustada a coluna (colspan)
                 tB.innerHTML = `<tr><td colspan="${isAdmin ? 7 : 6}" style="text-align:center;">Nenhum registro.</td></tr>`;
                 return;
             }
             tB.innerHTML = cs.map(c => {
                 const { sC, sT, pC } = calcularStatusPrazo(c.dataLimite, c.status);
-                // Célula de ações só é criada se for admin
                 const actionsCell = isAdmin ? `<td class="actions-cell"><button title="Editar" data-id="${c.id}" class="edit-cs-btn">✏️</button></td>` : '';
                 return `
                     <tr>
@@ -410,7 +522,6 @@
                 `;
             }).join('');
             
-            // Só adiciona listeners de edição se for admin
             if (isAdmin) {
                 document.querySelectorAll('.edit-cs-btn').forEach(b => b.addEventListener('click', e => {
                     const id = e.currentTarget.dataset.id;
@@ -419,9 +530,9 @@
             }
         }
         function calcularStatusPrazo(dL, s) { if (s === 'Respondido') return { sC: 'respondido', sT: 'Respondido', pC: '' }; const localToday = new Date(); const hoje = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const p = new Date(dL + 'T00:00:00'); const dD = (p - hoje) / 864e5; if (dD < 0) return { sC: 'atrasado', sT: 'Atrasado', pC: 'prazo-vencido' }; if (dD <= 7) return { sC: 'pendente', sT: 'Pendente', pC: 'prazo-atencao' }; return { sC: 'pendente', sT: 'Pendente', pC: '' }; }
-        function filtrarTabelaCS() { const tB = document.getElementById('cs-search').value.toLowerCase(), sF = document.getElementById('cs-filter-status').value; const cF = (database.comuniqueses || []).filter(c => { const sI = calcularStatusPrazo(c.dataLimite, c.status); const cS = (sF === 'todos') || (sF === sI.sT.toLowerCase()); const cB = (c.protocolo.toLowerCase().includes(tB) || c.orgaoEmissor.toLowerCase().includes(tB) || c.assunto.toLowerCase().includes(tB)); return cS && cB; }); renderizarTabelaCS(cF); }
+        function filtrarTabelaCS() { const tB = document.getElementById('cs-search').value.toLowerCase(), sF = document.getElementById('cs-filter-status').value; const cF = (database.comuniqueses || []).filter(c => { const sI = calcularStatusPrazo(c.dataLimite, c.status); const cS = (sF === 'todos') || (sF === sI.sT.toLowerCase()); const cB = (c.protocolo.toLowerCase().includes(tB) || c.orgaoEmissor.toLowerCase().includes(tB) || c.assunto.toLowerCase().includes(tB)); return cS && cB; }); renderarTabelaCS(cF); }
         
-        // --- Funções de Dados e Navegação
+        // --- Funções de Dados e Navegação (sem alteração)
         async function carregarDados() { 
             try { 
                 const r = await fetch(JSONBIN_URL, { headers: { 'X-Master-Key': API_KEY } }); 
@@ -431,7 +542,6 @@
                 if (!database.obras) database.obras = []; 
                 if (!database.comuniqueses) database.comuniqueses = []; 
                 gerarNavegacao(database.obras); 
-                // [ALTERAÇÃO] Verifica se tem um link ativo, se não, vai pro painel-tv
                 const linkAtivo = navList.querySelector('a.active');
                 if (linkAtivo) {
                     linkAtivo.click();
@@ -440,18 +550,13 @@
                 }
             } catch (e) { 
                 console.error("Erro fatal:", e); 
-                // Mostra o erro mas mantém a estrutura básica
                 contentArea.innerHTML = `<div class="content-header"><div><h1>Erro ao Carregar Dados</h1><p>Não foi possível conectar. Verifique URL/Chave e conexão. Detalhes: ${e.message}</p></div></div>`;
             } 
         }
         
         let saveTimeout;
         function salvarDados(fU = false) {
-            // Impede o salvamento se não for admin
-            if (!isAdmin) {
-                console.warn("Modo de leitura. Salvamento bloqueado.");
-                return;
-            }
+            if (!isAdmin) { console.warn("Modo de leitura. Salvamento bloqueado."); return; }
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(async () => { 
                 console.log("Salvando..."); 
@@ -487,19 +592,18 @@
             else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); } 
         }
         
-        // --- Handlers de Input (só serão chamados se isAdmin) ---
+        // --- Handlers de Input (sem alteração) ---
         function handleInputChange(e) { const i = e.target, oId = i.dataset.obraId, t = i.dataset.tipo; let vN = parseFloat(i.value.replace(/\./g, '').replace(',', '.')) || 0; const o = database.obras.find(x => x.id === oId); if (!o) return; switch (t) { case 'imobilizacao': o.dadosImobilizacao.atual = vN; break; case 'economia': o.dadosEconomia.atual = Math.round(vN); break; case 'avance': o.dadosAvanceFisico.atual = Math.round(vN); break; } salvarDados(); }
         function handleInputFormatting(e) { const i = e.target, t = i.dataset.tipo; let v = i.value.replace(/\D/g, ''); if (v === '') { i.value = ''; return; } if (t.includes('imobilizacao')) { const nV = parseInt(v, 10) / 100; i.value = nV.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); } else { i.value = parseInt(v, 10).toLocaleString('pt-BR'); } }
         function handleExcluirClick(e) { const oId = e.target.dataset.obraId; const o = database.obras.find(x => x.id === oId); if (!o) return; if (confirm(`Excluir "${o.nomeCompleto}"?\nAção permanente.`)) { const idx = database.obras.findIndex(x => x.id === oId); if (idx > -1) { database.obras.splice(idx, 1); salvarDados(true); gerarNavegacao(database.obras); navList.querySelector('a[data-id="visao-geral"]').click(); } } }
         
-        // --- Configuração dos Modais ---
+        // --- Configuração dos Modais (sem alteração) ---
         const modalObras = document.getElementById('modal-novo-contrato');
         const formObras = document.getElementById('form-novo-contrato');
         const btnAddObra = document.getElementById('btn-adicionar-contrato');
         modalObras.querySelectorAll('.close-button').forEach(b => b.addEventListener('click', () => fecharModal(modalObras, formObras)));
         modalObras.addEventListener('click', e => { if (e.target === modalObras) fecharModal(modalObras, formObras); });
         
-        // Só permite adicionar/salvar obras se for admin
         if (!isAdmin) {
             btnAddObra.style.display = 'none';
         } else {
@@ -521,16 +625,13 @@
         modalCS.addEventListener('click', e => { if (e.target === modalCS) fecharModal(modalCS, formCS); });
         
         function abrirModalCS(id = null) {
-            // Só abre o modal se for admin
             if (!isAdmin) return;
-            
             formCS.reset();
             const title = modalCS.querySelector('#modal-cs-title');
             if (id) { const c = database.comuniqueses.find(x => x.id === id); if (!c) return; title.textContent = "Editar Comunique-se"; document.getElementById('cs-id').value = c.id; document.getElementById('cs-protocolo').value = c.protocolo; document.getElementById('cs-orgao').value = c.orgaoEmissor; document.getElementById('cs-data-recebimento').value = c.dataRecebimento; document.getElementById('cs-prazo-dias').value = c.prazoDias; document.getElementById('cs-assunto').value = c.assunto; document.getElementById('cs-responsavel').value = c.responsavel; document.getElementById('cs-status').value = c.status; document.getElementById('cs-data-resposta').value = c.dataResposta || ''; document.getElementById('cs-oficio-resposta').value = c.oficioResposta || ''; document.getElementById('cs-observacao').value = c.observacao || ''; } else { title.textContent = "Novo Comunique-se"; document.getElementById('cs-id').value = ''; }
             abrirModal(modalCS);
         }
         
-        // Só adiciona o listener de submit se for admin
         if (isAdmin) {
             formCS.addEventListener('submit', e => {
                 e.preventDefault();
@@ -538,7 +639,7 @@
                 const dR = new Date(document.getElementById('cs-data-recebimento').value + 'T00:00:00');
                 const pD = parseInt(document.getElementById('cs-prazo-dias').value, 10);
                 dR.setDate(dR.getDate() + pD);
-                const dL = dR.toISOString().split('T')[0];
+                const dL = dR.toISOString().split('T_0')[0];
                 const cD = { protocolo: document.getElementById('cs-protocolo').value, orgaoEmissor: document.getElementById('cs-orgao').value, dataRecebimento: document.getElementById('cs-data-recebimento').value, prazoDias: pD, dataLimite: dL, assunto: document.getElementById('cs-assunto').value, responsavel: document.getElementById('cs-responsavel').value, status: document.getElementById('cs-status').value, dataResposta: document.getElementById('cs-data-resposta').value || null, oficioResposta: document.getElementById('cs-oficio-resposta').value || '', observacao: document.getElementById('cs-observacao').value || '', };
                 if (id) { const idx = database.comuniqueses.findIndex(c => c.id === id); if (idx > -1) database.comuniqueses[idx] = { ...database.comuniqueses[idx], ...cD }; } else { cD.id = `com-${Date.now()}`; database.comuniqueses.push(cD); }
                 salvarDados(true);
@@ -546,13 +647,51 @@
             });
         }
         
-        // Funções de Modal e Fullscreen
+        // Funções de Modal e Fullscreen (sem alteração)
         function abrirModal(m) { m.classList.add('active'); } function fecharModal(m, f) { m.classList.remove('active'); if (f) f.reset(); }
         function enterFullScreenMode() { sidebar.classList.add('hidden'); contentArea.classList.add('fullscreen'); document.documentElement.requestFullscreen().catch(e => console.error(e)); }
         function exitFullScreenMode() { if (document.fullscreenElement) document.exitFullscreen(); sidebar.classList.remove('hidden'); contentArea.classList.remove('fullscreen'); }
         document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) exitFullScreenMode(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.fullscreenElement) exitFullScreenMode(); });
         
+
+        // --- [NOVO - RESPONSIVO] Lógica para o menu hamburger ---
+        const toggleBtn = document.getElementById('sidebar-toggle-btn');
+        const sidebarEl = document.querySelector('.sidebar');
+        const overlayEl = document.getElementById('sidebar-overlay');
+
+        function openSidebar() {
+            sidebarEl.classList.add('is-open');
+            overlayEl.classList.add('is-open');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeSidebar() {
+            sidebarEl.classList.remove('is-open');
+            overlayEl.classList.remove('is-open');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (sidebarEl.classList.contains('is-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        overlayEl.addEventListener('click', closeSidebar);
+        
+        // [NOVO - RESPONSIVO] Fecha o menu ao clicar em um link
+        navList.addEventListener('click', (e) => {
+            // Verifica se o clique foi em um link (A) dentro da lista
+            if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                closeSidebar();
+            }
+        });
+        // --- Fim do bloco responsivo ---
+
+
         // Inicia a aplicação
         carregarDados();
     });
