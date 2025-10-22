@@ -53,7 +53,7 @@
         fieldset { border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-top: 20px; grid-column: 1 / -1; }
         legend { font-weight: 600; color: #1e3a5f; padding: 0 10px; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px; border-top: 1px solid #e5e5e5; background-color: #f9f9f9; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
-        .cs-controls { display: flex; gap: 20px; margin-bottom: 20px; background-color: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-wrap: wrap; }
+        .cs-controls { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; background-color: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-wrap: wrap; }
         .cs-controls input, .cs-controls select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
         .cs-table-wrapper { overflow-x: auto; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .cs-table { width: 100%; border-collapse: collapse; min-width: 800px; }
@@ -328,7 +328,7 @@
 
     <script>
     // ======================================================================================================
-    // SCRIPT COMPLETO (v11 - Removido "Casas" + Responsivo + Modo de Edição)
+    // SCRIPT COMPLETO (v12 - Removido "Casas" + Responsivo + Modo de Edição + "Economias" nas metas)
     // ======================================================================================================
     /**
     * @author ERIVANDRO JUNIOR
@@ -366,7 +366,8 @@
             const pImob = calculatePercentage(tImobA, tImobM), pEcon = calculatePercentage(tEconA, tEconM), pAvance = calculatePercentage(tAvanceA, tAvanceM); 
             
             // [ALTERAÇÃO] Removido 'casas'
-            contentArea.innerHTML = `<div class="content-header"><div><h1>Visão Geral do Projeto</h1><p>Resumo de todos os contratos.</p></div></div><div class="dashboard-grid"><section class="metrics"><figure class="metric-card"><figcaption class="label">Contratos Ativos</figcaption><div class="value">${obras.length}</div></figure><figure class="metric-card"><figcaption class="label">Imobilização Total</figcaption><div class="value goal">${formatAsCompactCurrency(tImobM)}</div></figure><figure class="metric-card"><figcaption class="label">Economias Totais</figcaption><div class="value goal">${formatUnits(tEconM)}</div></figure><figure class="metric-card"><figcaption class="label">Extensão Total</figcaption><div class="value goal">${formatUnits(tAvanceM / 1e3, 'km')}</div></figure></section><section class="metric-card progress-card"><h3>Progresso: Imobilização</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pImob > 100 ? 100 : pImob.toFixed(2)}%;">${pImob.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tImobM, tImobA, 'currency')}</div><div>Executado: <span>${formatCurrency(tImobA)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Economias</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pEcon > 100 ? 100 : pEcon.toFixed(2)}%;background-color:#ff9800;">${pEcon.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tEconM, tEconA, 'units', '')}</div><div>Alcançado: <span>${formatUnits(tEconA)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Avanço Físico</h3><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pAvance > 100 ? 100 : pAvance.toFixed(2)}%;">${pAvance.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tAvanceM, tAvanceA, 'units', 'km', 1e3)}</div><div>Executado: <span>${formatUnits(tAvanceA / 1e3, 'km')}</span></div></div></section></div>`; 
+            // [ALTERAÇÃO] Adicionado 'economias' na função formatarValorFaltante para Economias
+            contentArea.innerHTML = `<div class="content-header"><div><h1>Visão Geral do Projeto</h1><p>Resumo de todos os contratos.</p></div></div><div class="dashboard-grid"><section class="metrics"><figure class="metric-card"><figcaption class="label">Contratos Ativos</figcaption><div class="value">${obras.length}</div></figure><figure class="metric-card"><figcaption class="label">Imobilização Total</figcaption><div class="value goal">${formatAsCompactCurrency(tImobM)}</div></figure><figure class="metric-card"><figcaption class="label">Economias Totais</figcaption><div class="value goal">${formatUnits(tEconM)}</div></figure><figure class="metric-card"><figcaption class="label">Extensão Total</figcaption><div class="value goal">${formatUnits(tAvanceM / 1e3, 'km')}</div></figure></section><section class="metric-card progress-card"><h3>Progresso: Imobilização</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pImob > 100 ? 100 : pImob.toFixed(2)}%;">${pImob.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tImobM, tImobA, 'currency')}</div><div>Executado: <span>${formatCurrency(tImobA)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Economias</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pEcon > 100 ? 100 : pEcon.toFixed(2)}%;background-color:#ff9800;">${pEcon.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tEconM, tEconA, 'units', 'economias')}</div><div>Alcançado: <span>${formatUnits(tEconA)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Avanço Físico</h3><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pAvance > 100 ? 100 : pAvance.toFixed(2)}%;">${pAvance.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tAvanceM, tAvanceA, 'units', 'km', 1e3)}</div><div>Executado: <span>${formatUnits(tAvanceA / 1e3, 'km')}</span></div></div></section></div>`; 
         }
         
         function mostrarPaginaObra(o) {
@@ -376,6 +377,7 @@
             const adminOnlyDisplay = !isAdmin ? 'style="display:none;"' : '';
             
             // [ALTERAÇÃO] Removido "(Casas)" e "Casas Atendidas"
+            // [ALTERAÇÃO] Adicionado 'economias' na função formatarValorFaltante para Economias
             contentArea.innerHTML = `
             <div class="content-header"><div><h1>${o.nomeCompleto}</h1><p>Acompanhamento detalhado.</p></div></div>
             <div class="dashboard-grid">
@@ -399,7 +401,7 @@
                     </div>
                     <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div>
                     <div class="progress-details">
-                        <div>${formatarValorFaltante(o.dadosEconomia.meta, o.dadosEconomia.atual, 'units', '')}</div>
+                        <div>${formatarValorFaltante(o.dadosEconomia.meta, o.dadosEconomia.atual, 'units', 'economias')}</div>
                         <div>Meta: <span>${formatUnits(o.dadosEconomia.meta)}</span></div>
                     </div>
                 </section>
@@ -452,8 +454,9 @@
             const sC = contentArea.querySelector('.slideshow-content'); 
             
             // [ALTERAÇÃO] Removido 'casas'
+            // [ALTERAÇÃO] Adicionado 'economias' na função formatarValorFaltante para Economias
             sC.innerHTML = `<div class="panel-slide"><h2>Meta de Imobilização</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tI, aI, 'currency')}</div><div>Executado: <span>${formatCurrency(aI)}</span></div><div>Meta Diária: <span>${formatCurrency(dIT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-imob"></div></div>` 
-                         + `<div class="panel-slide"><h2>Meta de Economias</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tE, aE, 'units', '')}</div><div>Alcançado: <span>${formatUnits(aE)}</span></div><div>Meta Diária: <span>${formatUnits(dET)}</span></div><div>Dias Úteis: <span>${bDE}</span></div></div><div class="calendars" id="calendars-econ"></div></div>` 
+                         + `<div class="panel-slide"><h2>Meta de Economias</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tE, aE, 'units', 'economias')}</div><div>Alcançado: <span>${formatUnits(aE)}</span></div><div>Meta Diária: <span>${formatUnits(dET)}</span></div><div>Dias Úteis: <span>${bDE}</span></div></div><div class="calendars" id="calendars-econ"></div></div>` 
                          + `<div class="panel-slide"><h2>Avanço Físico</h2><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tA, aA, 'units', 'm')}</div><div>Executado: <span>${formatUnits(aA, 'm')}</span></div><div>Meta Diária: <span>${formatUnits(dAT, 'm')}</span></div><div>Dias Úteis: <span>${bDA}</span></div></div><div class="calendars" id="calendars-avance"></div></div>`; 
                          
             const { renderAllCalendars } = setupCalendarLogic(H); 
