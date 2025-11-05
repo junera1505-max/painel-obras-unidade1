@@ -562,7 +562,7 @@
         function filtrarTabelaCS() { const tB = document.getElementById('cs-search').value.toLowerCase(), sF = document.getElementById('cs-filter-status').value; const cF = (database.comuniqueses || []).filter(c => { const sI = calcularStatusPrazo(c.dataLimite, c.status); const cS = (sF === 'todos') || (sF === sI.sT.toLowerCase()); const cB = (c.protocolo.toLowerCase().includes(tB) || c.orgaoEmissor.toLowerCase().includes(tB) || c.assunto.toLowerCase().includes(tB)); return cS && cB; }); renderarTabelaCS(cF); }
         
         // =========================================================================
-        // [NOVA ALTERAÇÃO] NOVAS FUNÇÕES PARA VISUALIZAÇÃO DO HISTÓRICO (Passo 2)
+        // [FUNÇÕES DE HISTÓRICO]
         // =========================================================================
 
         /**
@@ -730,11 +730,9 @@
             // Define a função de formatação (Moeda ou Unidade)
             const formatFn = (tipoValor === 'currency') ? formatCurrency : formatUnits;
             
-            // ####################################################################
             // [NOVA ALTERAÇÃO] Mudando a ordem de DESC para ASC (crescente)
             // Ordena do mais ANTIGO para o mais RECENTE (ex: 2025-03 vem antes de 2025-04)
             const historicoOrdenado = [...historico].sort((a, b) => a.mes.localeCompare(b.mes));
-            // ####################################################################
 
             // Inicia a tabela
             let tabelaHtml = `
@@ -793,8 +791,26 @@
                 { key: 'dadosAvanceFisico', nome: 'Avanço' } // Adicionando Avanço
             ];
 
-            // Ordena as obras por nomeCurto
-            const obrasOrdenadas = [...obras].sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto));
+            // ####################################################################
+            // [NOVA ALTERAÇÃO] Aplicando a mesma ordem personalizada da página de visualização
+            // Isso garante que o texto no textarea apareça na mesma ordem dos cards.
+            const ordemDosCards = ["1B1", "1A2", "1B2", "1A1", "6A", "17B", "17A"];
+            const ordemMap = new Map(ordemDosCards.map((nome, index) => [nome, index]));
+            
+            const getSortIndex = (obra) => {
+                const sufixo = obra.nomeCurto.split(' ').pop(); 
+                return ordemMap.has(sufixo) ? ordemMap.get(sufixo) : Infinity;
+            };
+
+            const obrasOrdenadas = [...obras].sort((a, b) => {
+                const indexA = getSortIndex(a);
+                const indexB = getSortIndex(b);
+                if (indexA === Infinity && indexB === Infinity) {
+                    return a.nomeCurto.localeCompare(b.nomeCurto);
+                }
+                return indexA - indexB;
+            });
+            // ####################################################################
 
             for (const obra of obrasOrdenadas) {
                 output.push(`\n# ${obra.nomeCurto}`);
@@ -803,7 +819,7 @@
                 for (const tipo of tipos) {
                     const dados = obra[tipo.key];
                     if (dados && dados.historico && dados.historico.length > 0) {
-                        // Ordena o histórico por mês
+                        // Ordena o histórico por mês (ASCENDENTE)
                         dados.historico.sort((a,b) => a.mes.localeCompare(b.mes));
                         for (const item of dados.historico) {
                             // Formato: TIPO, YYYY-MM, META, REALIZADO
