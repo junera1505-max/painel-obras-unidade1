@@ -719,7 +719,7 @@
 
         /**
          * @author ERIVANDRO JUNIOR
-         * Helper que cria a tabela HTML para um histórico (Sem alterações)
+         * Helper que cria a tabela HTML para um histórico
          */
         function renderizarHistoricoTabela(historico, tipoValor) {
             // Se não tem histórico, mostra uma mensagem simples
@@ -730,8 +730,11 @@
             // Define a função de formatação (Moeda ou Unidade)
             const formatFn = (tipoValor === 'currency') ? formatCurrency : formatUnits;
             
-            // Ordena do mais recente para o mais antigo (ex: 2025-04 vem antes de 2025-03)
-            const historicoOrdenado = [...historico].sort((a, b) => b.mes.localeCompare(a.mes));
+            // ####################################################################
+            // [NOVA ALTERAÇÃO] Mudando a ordem de DESC para ASC (crescente)
+            // Ordena do mais ANTIGO para o mais RECENTE (ex: 2025-03 vem antes de 2025-04)
+            const historicoOrdenado = [...historico].sort((a, b) => a.mes.localeCompare(b.mes));
+            // ####################################################################
 
             // Inicia a tabela
             let tabelaHtml = `
@@ -873,10 +876,8 @@
 
                 if (tipo.toLowerCase().startsWith('imobil')) {
                     
-                    // ####################################################################
                     // [BUG CORRIGIDO NA VERSÃO ANTERIOR]
                     if (!currentObra.dadosImobilizacao) currentObra.dadosImobilizacao = {};
-                    // ####################################################################
 
                     if (!currentObra.dadosImobilizacao.historico) currentObra.dadosImobilizacao.historico = [];
                     targetArray = currentObra.dadosImobilizacao.historico;
@@ -925,7 +926,7 @@
                     <h3>Instruções</h3>
                     <ul style="font-size: 0.9rem;">
                         <li>Linhas com <code># Nome do Contrato</code> definem qual contrato os dados abaixo pertencem. (Ex: <code># Pacote 17A</code>)</li>
-                        <li>Linhas de dados devem ter o formato: TIPO, YYYY-MM, META, REALIZADO</li>
+                        <li>Linhas de dados devem ter o formato: <code>TIPO, YYYY-MM, META, REALIZADO</code></li>
                         <li><strong>Tipos válidos:</strong> <code>Imobilização</code>, <code>Economia</code>, <code>Avanço</code> (sem acentos).</li>
                         <li><strong>Exemplo de linha de dado:</strong> <code>Imobilização, 2025-03, 50000, 65120.50</code></li>
                         <li><strong>Exemplo de linha de dado:</strong> <code>Economia, 2025-04, 100, 98</code></li>
