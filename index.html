@@ -628,9 +628,11 @@
          * [FUNÇÃO MODIFICADA] Mostra a página "Metas Acumuladas" com agregação e sort
          */
         function mostrarMetasAcumuladas(obras) {
+            // [NOVA ALTERAÇÃO] Adicionando o botão de exportar
             contentArea.innerHTML = `
                 <div class="content-header">
                     <div><h1>Metas Acumuladas</h1><p>Histórico mensal de todos os contratos.</p></div>
+                    <button id="btn-export-csv" class="btn-primary" style="background-color: #28a745;">📊 Exportar CSV</button>
                 </div>
                 <div class="dashboard-grid" id="container-metas-acumuladas">
                     </div>`;
@@ -715,6 +717,10 @@
                 `;
                 container.appendChild(card);
             }
+
+            // [NOVA ALTERAÇÃO] Adiciona o listener para o botão de exportar
+            // Passamos a lista 'obrasOrdenadas' que já está na ordem certa e com o card EML 2
+            document.getElementById('btn-export-csv').addEventListener('click', () => exportarParaCSV(obrasOrdenadas));
         }
 
         /**
@@ -730,8 +736,7 @@
             // Define a função de formatação (Moeda ou Unidade)
             const formatFn = (tipoValor === 'currency') ? formatCurrency : formatUnits;
             
-            // [NOVA ALTERAÇÃO] Mudando a ordem de DESC para ASC (crescente)
-            // Ordena do mais ANTIGO para o mais RECENTE (ex: 2025-03 vem antes de 2025-04)
+            // [ALTERAÇÃO EXISTENTE] Mudando a ordem de DESC para ASC (crescente)
             const historicoOrdenado = [...historico].sort((a, b) => a.mes.localeCompare(b.mes));
 
             // Inicia a tabela
@@ -774,9 +779,100 @@
             return tabelaHtml;
         }
 
+        // =========================================================================
+        // [NOVA ALTERAÇÃO] FUNÇÃO DE EXPORTAR PARA CSV
+        // =========================================================================
+        /**
+         * @author ERIVANDRO JUNIOR
+         * Constrói e baixa um arquivo CSV com base nos dados do histórico.
+         */
+        function exportarParaCSV(obrasOrdenadas) {
+            console.log("Iniciando exportação CSV...");
+            
+            const allMonths = new Set();
+            const dataMatrix = {};
+            const tipos = [
+                { key: 'dadosImobilizacao', nome: 'Imobilização' },
+                { key: 'dadosEconomia', nome: 'Economia' },
+                { key: 'dadosAvanceFisico', nome: 'Avanço Físico' }
+            ];
+            const metricas = [
+                "Imobilização Projetada", "Imobilização Realizada",
+                "Economia Projetada", "Economia Realizada",
+                "Avanço Físico Projetado", "Avanço Físico Realizado"
+            ];
+
+            // 1. Mapear todos os dados e meses existentes
+            for (const obra of obrasOrdenadas) {
+                const obraName = obra.nomeCurto;
+                dataMatrix[obraName] = {};
+                for (const metrica of metricas) {
+                    dataMatrix[obraName][metrica] = {};
+                }
+
+                for (const tipo of tipos) {
+                    const hist = obra[tipo.key]?.historico;
+                    if (hist) {
+                        for (const item of hist) {
+                            allMonths.add(item.mes); // Adiciona "2025-08", "2025-09"
+                            dataMatrix[obraName][tipo.nome + ' Projetada'][item.mes] = item.meta || 0;
+                            dataMatrix[obraName][tipo.nome + ' Realizada'][item.mes] = item.realizado || 0;
+                        }
+                    }
+                }
+            }
+
+            // 2. Criar cabeçalho dos meses, ordenado
+            const sortedMonths = Array.from(allMonths).sort();
+            
+            // Mapeia "2025-08" para "Ago/2025" para um cabeçalho mais amigável
+            const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            const headerMeses = sortedMonths.map(mes => {
+                const [year, month] = mes.split('-');
+                return `${monthNames[parseInt(month, 10) - 1]}/${year}`;
+            });
+            
+            const header = ["Contrato", "Métrica", ...headerMeses];
+            let csvContent = [];
+            csvContent.push(header.join(';')); // Usa ponto-e-vírgula
+
+            // 3. Construir as linhas do CSV
+            for (const obra of obrasOrdenadas) {
+                const obraName = obra.nomeCurto;
+                
+                for (const metrica of metricas) {
+                    let row = [obraName, metrica];
+                    for (const month of sortedMonths) {
+                        const valor = dataMatrix[obraName][metrica][month] || 0;
+                        // Converte para string pt-BR (com vírgula decimal)
+                        row.push(String(valor).replace('.', ','));
+                    }
+                    csvContent.push(row.join(';'));
+                }
+                // Adiciona uma linha em branco entre os contratos para legibilidade
+                csvContent.push(''); 
+            }
+
+            // 4. Criar e baixar o arquivo
+            // \uFEFF é o "BOM", um caractere especial para o Excel entender acentos (UTF-8)
+            const csvString = '\uFEFF' + csvContent.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            
+            const link = document.createElement("a");
+            if (link.download !== undefined) { // Check for download attribute
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "relatorio_metas_acumuladas.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
 
         // =========================================================================
-        // [ALTERAÇÃO EXISTENTE] Funções de Lançamento de Histórico (Passo 1)
+        // [FUNÇÕES DE LANÇAMENTO]
         // =========================================================================
         
         /**
@@ -791,9 +887,7 @@
                 { key: 'dadosAvanceFisico', nome: 'Avanço' } // Adicionando Avanço
             ];
 
-            // ####################################################################
             // [NOVA ALTERAÇÃO] Aplicando a mesma ordem personalizada da página de visualização
-            // Isso garante que o texto no textarea apareça na mesma ordem dos cards.
             const ordemDosCards = ["1B1", "1A2", "1B2", "1A1", "6A", "17B", "17A"];
             const ordemMap = new Map(ordemDosCards.map((nome, index) => [nome, index]));
             
@@ -810,7 +904,6 @@
                 }
                 return indexA - indexB;
             });
-            // ####################################################################
 
             for (const obra of obrasOrdenadas) {
                 output.push(`\n# ${obra.nomeCurto}`);
