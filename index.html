@@ -767,7 +767,7 @@
                 let targetArray = null;
 
                 if (tipo.toLowerCase().startsWith('imobil')) {
-                    if (!currentOba.dadosImobilizacao) currentObra.dadosImobilizacao = {};
+                    if (!currentObra.dadosImobilizacao) currentObra.dadosImobilizacao = {};
                     if (!currentObra.dadosImobilizacao.historico) currentObra.dadosImobilizacao.historico = [];
                     targetArray = currentObra.dadosImobilizacao.historico;
                 } else if (tipo.toLowerCase().startsWith('econ')) {
@@ -1002,3 +1002,4 @@
     </script>
 </body>
 </html>
+
