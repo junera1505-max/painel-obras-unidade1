@@ -567,7 +567,65 @@
 
         /**
          * @author ERIVANDRO JUNIOR
-         * Mostra a página de visualização "Metas Acumuladas"
+         * [NOVA FUNÇÃO] Calcula o histórico agregado de todas as obras.
+         */
+        function calcularHistoricoAgregado(obras) {
+            const agregados = {
+                Imobilização: {},
+                Economia: {},
+                Avanço: {}
+            };
+
+            const tipos = [
+                { key: 'dadosImobilizacao', nome: 'Imobilização' },
+                { key: 'dadosEconomia', nome: 'Economia' },
+                { key: 'dadosAvanceFisico', nome: 'Avanço' }
+            ];
+
+            // 1. Loop por todas as obras REAIS
+            for (const obra of obras) {
+                // 2. Loop pelos tipos (Imob, Econ, Avanço)
+                for (const tipo of tipos) {
+                    const hist = obra[tipo.key]?.historico; // ?. evita erro se 'historico' não existir
+                    if (hist && hist.length > 0) {
+                        // 3. Loop por cada entrada mensal (2025-03, 2025-04...)
+                        for (const item of hist) {
+                            const { mes, meta, realizado } = item;
+                            
+                            // Se o mês ainda não existe no agregado, cria
+                            if (!agregados[tipo.nome][mes]) {
+                                agregados[tipo.nome][mes] = { mes: mes, meta: 0, realizado: 0 };
+                            }
+                            
+                            // Soma os valores
+                            agregados[tipo.nome][mes].meta += meta || 0;
+                            agregados[tipo.nome][mes].realizado += realizado || 0;
+                        }
+                    }
+                }
+            }
+
+            // 4. Constrói o objeto "obra" FALSO para a Coordenação
+            const obraEml2 = {
+                id: 'coord-eml-2',
+                nomeCurto: 'Coordenação EML 2', // Nome para o sort
+                nomeCompleto: 'Coordenação EML 2', // Título do Card
+                dadosImobilizacao: {
+                    historico: Object.values(agregados.Imobilização) // Converte o mapa de volta para array
+                },
+                dadosEconomia: {
+                    historico: Object.values(agregados.Economia)
+                },
+                dadosAvanceFisico: {
+                    historico: Object.values(agregados.Avanço)
+                }
+            };
+            return obraEml2;
+        }
+
+        /**
+         * @author ERIVANDRO JUNIOR
+         * [FUNÇÃO MODIFICADA] Mostra a página "Metas Acumuladas" com agregação e sort
          */
         function mostrarMetasAcumuladas(obras) {
             contentArea.innerHTML = `
@@ -580,13 +638,60 @@
             const container = document.getElementById('container-metas-acumuladas');
             if (!container) return;
 
-            const obrasOrdenadas = [...obras].sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto));
+            // 1. Criar o card agregado "EML 2"
+            const obraEml2 = calcularHistoricoAgregado(obras);
+
+            // 2. Criar a lista completa (EML 2 + Contratos)
+            const todasAsObras = [obraEml2, ...obras];
+
+            // 3. Definir a ordem de sort personalizada
+            // Usamos os sufixos dos seus 'nomeCurto' (1B1, 1A2, 17A, etc.)
+            const ordemDosCards = [
+                "Coordenação EML 2", // Nome exato do card novo
+                "1B1",
+                "1A2",
+                "1B2",
+                "1A1",
+                "6A",
+                "17B",
+                "17A"
+            ];
+            
+            // Criar um "mapa" para a ordem (muito mais rápido para consultar)
+            const ordemMap = new Map(ordemDosCards.map((nome, index) => [nome, index]));
+
+            // Helper para pegar o índice de sort de uma obra
+            const getSortIndex = (obra) => {
+                if (obra.nomeCurto === "Coordenação EML 2") return 0; // O card novo é sempre o primeiro
+                
+                // Pega a última parte do 'nomeCurto' (ex: "Pacote 17A" -> "17A")
+                const sufixo = obra.nomeCurto.split(' ').pop(); 
+                
+                // Se o sufixo está no mapa, retorna seu índice. Senão, joga pro fim (Infinity).
+                return ordemMap.has(sufixo) ? ordemMap.get(sufixo) : Infinity;
+            };
+
+            // 4. Sortar a lista
+            const obrasOrdenadas = todasAsObras.sort((a, b) => {
+                const indexA = getSortIndex(a);
+                const indexB = getSortIndex(b);
+
+                // Se ambos não estão no mapa (ex: "Varzeas A"), sortar alfabeticamente
+                if (indexA === Infinity && indexB === Infinity) {
+                    return a.nomeCurto.localeCompare(b.nomeCurto);
+                }
+
+                // Caso contrário, sortar pelo índice da lista
+                return indexA - indexB;
+            });
+
 
             if (obrasOrdenadas.length === 0) {
                 container.innerHTML = '<p>Nenhum contrato cadastrado.</p>';
                 return;
             }
 
+            // 5. Renderizar os cards (agora na ordem certa)
             for (const obra of obrasOrdenadas) {
                 const card = document.createElement('section');
                 card.className = 'metric-card progress-card'; // Reusando o estilo de card existente
@@ -614,7 +719,7 @@
 
         /**
          * @author ERIVANDRO JUNIOR
-         * Helper que cria a tabela HTML para um histórico
+         * Helper que cria a tabela HTML para um histórico (Sem alterações)
          */
         function renderizarHistoricoTabela(historico, tipoValor) {
             // Se não tem histórico, mostra uma mensagem simples
@@ -769,8 +874,7 @@
                 if (tipo.toLowerCase().startsWith('imobil')) {
                     
                     // ####################################################################
-                    // [BUG CORRIGIDO DE VERDADE AGORA]
-                    // A linha abaixo estava com 'currentOba' em vez de 'currentObra'
+                    // [BUG CORRIGIDO NA VERSÃO ANTERIOR]
                     if (!currentObra.dadosImobilizacao) currentObra.dadosImobilizacao = {};
                     // ####################################################################
 
@@ -821,7 +925,7 @@
                     <h3>Instruções</h3>
                     <ul style="font-size: 0.9rem;">
                         <li>Linhas com <code># Nome do Contrato</code> definem qual contrato os dados abaixo pertencem. (Ex: <code># Pacote 17A</code>)</li>
-                        <li>Linhas de dados devem ter o formato: <code>TIPO, YYYY-MM, META, REALIZADO</code></li>
+                        <li>Linhas de dados devem ter o formato: TIPO, YYYY-MM, META, REALIZADO</li>
                         <li><strong>Tipos válidos:</strong> <code>Imobilização</code>, <code>Economia</code>, <code>Avanço</code> (sem acentos).</li>
                         <li><strong>Exemplo de linha de dado:</strong> <code>Imobilização, 2025-03, 50000, 65120.50</code></li>
                         <li><strong>Exemplo de linha de dado:</strong> <code>Economia, 2025-04, 100, 98</code></li>
@@ -907,7 +1011,7 @@
             // [ALTERAÇÃO EXISTENTE] Lida com o clique no novo botão
             else if (id === 'lancar-historico') mostrarPaginaHistorico();
             
-            else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); } // Erro de digitação corrigido aqui também
+            else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); } 
         }
         
         function handleInputChange(e) { const i = e.target, oId = i.dataset.obraId, t = i.dataset.tipo; let vN = parseFloat(i.value.replace(/\./g, '').replace(',', '.')) || 0; const o = database.obras.find(x => x.id === oId); if (!o) return; switch (t) { case 'imobilizacao': o.dadosImobilizacao.atual = vN; break; case 'economia': o.dadosEconomia.atual = Math.round(vN); break; case 'avance': o.dadosAvanceFisico.atual = Math.round(vN); break; } salvarDados(); }
