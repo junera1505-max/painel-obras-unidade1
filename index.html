@@ -767,6 +767,7 @@
                 let targetArray = null;
 
                 if (tipo.toLowerCase().startsWith('imobil')) {
+                    // [BUG CORRIGIDO] Estava 'currentOba', agora é 'currentObra'
                     if (!currentObra.dadosImobilizacao) currentObra.dadosImobilizacao = {};
                     if (!currentObra.dadosImobilizacao.historico) currentObra.dadosImobilizacao.historico = [];
                     targetArray = currentObra.dadosImobilizacao.historico;
@@ -901,7 +902,7 @@
             // [ALTERAÇÃO EXISTENTE] Lida com o clique no novo botão
             else if (id === 'lancar-historico') mostrarPaginaHistorico();
             
-            else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); } 
+            else { const o = database.obras.find(x => x.id === id); if (o) mostrarPagoinaObra(o); } 
         }
         
         function handleInputChange(e) { const i = e.target, oId = i.dataset.obraId, t = i.dataset.tipo; let vN = parseFloat(i.value.replace(/\./g, '').replace(',', '.')) || 0; const o = database.obras.find(x => x.id === oId); if (!o) return; switch (t) { case 'imobilizacao': o.dadosImobilizacao.atual = vN; break; case 'economia': o.dadosEconomia.atual = Math.round(vN); break; case 'avance': o.dadosAvanceFisico.atual = Math.round(vN); break; } salvarDados(); }
@@ -1002,4 +1003,3 @@
     </script>
 </body>
 </html>
-
