@@ -366,7 +366,10 @@
             navList.innerHTML += `<li><a data-id="visao-geral">Visão Geral</a></li>`; 
             navList.innerHTML += `<li><a data-id="comuniqueses">📄 Comunique-se</a></li>`; 
             
-            // [NOVA ALTERAÇÃO] Adiciona o botão de Lançar Histórico (somente para admin)
+            // [NOVA ALTERAÇÃO] Adicionando a página de visualização do histórico
+            navList.innerHTML += `<li><a data-id="metas-acumuladas">📊 Metas Acumuladas</a></li>`;
+
+            // [ALTERAÇÃO EXISTENTE] Adiciona o botão de Lançar Histórico (somente para admin)
             if (isAdmin) {
                 // Usamos uma cor diferente para destacar que é uma ferramenta de admin
                 navList.innerHTML += `<li><a data-id="lancar-historico" style="color: #ffc107; font-weight: 600;">🛠️ Lançar Histórico</a></li>`;
@@ -382,8 +385,6 @@
             const tImobM = obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0), tImobA = obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0), tEconM = obras.reduce((s, o) => s + o.dadosEconomia.meta, 0), tEconA = obras.reduce((s, o) => s + o.dadosEconomia.atual, 0), tAvanceM = obras.reduce((s, o) => s + o.dadosAvanceFisico.meta, 0), tAvanceA = obras.reduce((s, o) => s + o.dadosAvanceFisico.atual, 0); 
             const pImob = calculatePercentage(tImobA, tImobM), pEcon = calculatePercentage(tEconA, tEconM), pAvance = calculatePercentage(tAvanceA, tAvanceM); 
             
-            // [ALTERAÇÃO] Removido 'casas'
-            // [ALTERAÇÃO] Adicionado 'economias' na função formatarValorFaltante para Economias
             contentArea.innerHTML = `<div class="content-header"><div><h1>Visão Geral do Projeto</h1><p>Resumo de todos os contratos.</p></div></div><div class="dashboard-grid"><section class="metrics"><figure class="metric-card"><figcaption class="label">Contratos Ativos</figcaption><div class="value">${obras.length}</div></figure><figure class="metric-card"><figcaption class="label">Imobilização Total</figcaption><div class="value goal">${formatAsCompactCurrency(tImobM)}</div></figure><figure class="metric-card"><figcaption class="label">Economias Totais</figcaption><div class="value goal">${formatUnits(tEconM)}</div></figure><figure class="metric-card"><figcaption class="label">Extensão Total</figcaption><div class="value goal">${formatUnits(tAvanceM / 1e3, 'km')}</div></figure></section><section class="metric-card progress-card"><h3>Progresso: Imobilização</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pImob > 100 ? 100 : pImob.toFixed(2)}%;">${pImob.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tImobM, tImobA, 'currency')}</div><div>Executado: <span>${formatCurrency(tImobA)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Economias</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pEcon > 100 ? 100 : pEcon.toFixed(2)}%;background-color:#ff9800;">${pEcon.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tEconM, tEconA, 'units', 'economias')}</div><div>Alcançado: <span>${formatUnits(tEconA)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Avanço Físico</h3><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pAvance > 100 ? 100 : pAvance.toFixed(2)}%;">${pAvance.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tAvanceM, tAvanceA, 'units', 'km', 1e3)}</div><div>Executado: <span>${formatUnits(tAvanceA / 1e3, 'km')}</span></div></div></section></div>`; 
         }
         
@@ -393,8 +394,6 @@
             const readOnlyState = !isAdmin ? 'readonly' : '';
             const adminOnlyDisplay = !isAdmin ? 'style="display:none;"' : '';
             
-            // [ALTERAÇÃO] Removido "(Casas)" e "Casas Atendidas"
-            // [ALTERAÇÃO] Adicionado 'economias' na função formatarValorFaltante para Economias
             contentArea.innerHTML = `
             <div class="content-header"><div><h1>${o.nomeCompleto}</h1><p>Acompanhamento detalhado.</p></div></div>
             <div class="dashboard-grid">
@@ -470,8 +469,6 @@
             contentArea.innerHTML = `<div class="slideshow-wrapper"><div class="slideshow-header"><h1>Painel TV</h1><button class="fullscreen-button" title="Modo Tela Cheia">📺</button></div><div class="slideshow-content"></div><button class="exit-fullscreen-button">Sair</button></div>`; 
             const sC = contentArea.querySelector('.slideshow-content'); 
             
-            // [ALTERAÇÃO] Removido 'casas'
-            // [ALTERAÇÃO] Adicionado 'economias' na função formatarValorFaltante para Economias
             sC.innerHTML = `<div class="panel-slide"><h2>Meta de Imobilização</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tI, aI, 'currency')}</div><div>Executado: <span>${formatCurrency(aI)}</span></div><div>Meta Diária: <span>${formatCurrency(dIT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-imob"></div></div>` 
                             + `<div class="panel-slide"><h2>Meta de Economias</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tE, aE, 'units', 'economias')}</div><div>Alcançado: <span>${formatUnits(aE)}</span></div><div>Meta Diária: <span>${formatUnits(dET)}</span></div><div>Dias Úteis: <span>${bDE}</span></div></div><div class="calendars" id="calendars-econ"></div></div>` 
                             + `<div class="panel-slide"><h2>Avanço Físico</h2><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tA, aA, 'units', 'm')}</div><div>Executado: <span>${formatUnits(aA, 'm')}</span></div><div>Meta Diária: <span>${formatUnits(dAT, 'm')}</span></div><div>Dias Úteis: <span>${bDA}</span></div></div><div class="calendars" id="calendars-avance"></div></div>`; 
@@ -565,7 +562,115 @@
         function filtrarTabelaCS() { const tB = document.getElementById('cs-search').value.toLowerCase(), sF = document.getElementById('cs-filter-status').value; const cF = (database.comuniqueses || []).filter(c => { const sI = calcularStatusPrazo(c.dataLimite, c.status); const cS = (sF === 'todos') || (sF === sI.sT.toLowerCase()); const cB = (c.protocolo.toLowerCase().includes(tB) || c.orgaoEmissor.toLowerCase().includes(tB) || c.assunto.toLowerCase().includes(tB)); return cS && cB; }); renderarTabelaCS(cF); }
         
         // =========================================================================
-        // [NOVA ALTERAÇÃO] NOVAS FUNÇÕES PARA LANÇAMENTO DE HISTÓRICO (Passo 1)
+        // [NOVA ALTERAÇÃO] NOVAS FUNÇÕES PARA VISUALIZAÇÃO DO HISTÓRICO (Passo 2)
+        // =========================================================================
+
+        /**
+         * @author ERIVANDRO JUNIOR
+         * Mostra a página de visualização "Metas Acumuladas"
+         */
+        function mostrarMetasAcumuladas(obras) {
+            contentArea.innerHTML = `
+                <div class="content-header">
+                    <div><h1>Metas Acumuladas</h1><p>Histórico mensal de todos os contratos.</p></div>
+                </div>
+                <div class="dashboard-grid" id="container-metas-acumuladas">
+                    </div>`;
+
+            const container = document.getElementById('container-metas-acumuladas');
+            if (!container) return;
+
+            const obrasOrdenadas = [...obras].sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto));
+
+            if (obrasOrdenadas.length === 0) {
+                container.innerHTML = '<p>Nenhum contrato cadastrado.</p>';
+                return;
+            }
+
+            for (const obra of obrasOrdenadas) {
+                const card = document.createElement('section');
+                card.className = 'metric-card progress-card'; // Reusando o estilo de card existente
+
+                // Pega o histórico de cada tipo. O "?." evita erro se 'historico' não existir.
+                const histImob = obra.dadosImobilizacao?.historico;
+                const histEcon = obra.dadosEconomia?.historico;
+                const histAvanc = obra.dadosAvanceFisico?.historico;
+
+                card.innerHTML = `
+                    <h3>${obra.nomeCompleto || obra.nomeCurto}</h3>
+                    
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Histórico de Imobilização (R$)</h4>
+                    ${renderizarHistoricoTabela(histImob, 'currency')}
+                    
+                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Histórico de Economias (Un.)</h4>
+                    ${renderizarHistoricoTabela(histEcon, 'units')}
+                    
+                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Histórico de Avanço Físico (m)</h4>
+                    ${renderizarHistoricoTabela(histAvanc, 'units')}
+                `;
+                container.appendChild(card);
+            }
+        }
+
+        /**
+         * @author ERIVANDRO JUNIOR
+         * Helper que cria a tabela HTML para um histórico
+         */
+        function renderizarHistoricoTabela(historico, tipoValor) {
+            // Se não tem histórico, mostra uma mensagem simples
+            if (!historico || historico.length === 0) {
+                return '<p style="font-size: 0.9rem; color: #6c757d; margin: 0;">Nenhum histórico lançado para este item.</p>';
+            }
+
+            // Define a função de formatação (Moeda ou Unidade)
+            const formatFn = (tipoValor === 'currency') ? formatCurrency : formatUnits;
+            
+            // Ordena do mais recente para o mais antigo (ex: 2025-04 vem antes de 2025-03)
+            const historicoOrdenado = [...historico].sort((a, b) => b.mes.localeCompare(a.mes));
+
+            // Inicia a tabela
+            let tabelaHtml = `
+                <div class="cs-table-wrapper" style="max-height: 300px; overflow-y: auto;">
+                    <table class="cs-table" style="min-width: 0; white-space: nowrap;">
+                        <thead>
+                            <tr>
+                                <th>Mês/Ano</th>
+                                <th>Meta</th>
+                                <th>Realizado</th>
+                                <th>Diferença</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            // Cria uma linha <tr> para cada item do histórico
+            for (const item of historicoOrdenado) {
+                const meta = item.meta || 0;
+                const realizado = item.realizado || 0;
+                const diff = realizado - meta;
+                
+                // Define a cor da diferença (verde se positivo, vermelho se negativo)
+                let diffClass = '';
+                if (diff > 0) diffClass = 'goal-surpassed'; // Classe CSS verde
+                if (diff < 0) diffClass = 'prazo-vencido';  // Classe CSS vermelha
+
+                tabelaHtml += `
+                    <tr>
+                        <td>${item.mes.replace('-', '/')}</td>
+                        <td>${formatFn(meta)}</td>
+                        <td>${formatFn(realizado)}</td>
+                        <td style="font-weight: 600;" class="${diffClass}">${formatFn(diff)}</td>
+                    </tr>
+                `;
+            }
+
+            tabelaHtml += `</tbody></table></div>`;
+            return tabelaHtml;
+        }
+
+
+        // =========================================================================
+        // [ALTERAÇÃO EXISTENTE] Funções de Lançamento de Histórico (Passo 1)
         // =========================================================================
         
         /**
@@ -662,7 +767,7 @@
                 let targetArray = null;
 
                 if (tipo.toLowerCase().startsWith('imobil')) {
-                    if (!currentObra.dadosImobilizacao) currentObra.dadosImobilizacao = {};
+                    if (!currentOba.dadosImobilizacao) currentObra.dadosImobilizacao = {};
                     if (!currentObra.dadosImobilizacao.historico) currentObra.dadosImobilizacao.historico = [];
                     targetArray = currentObra.dadosImobilizacao.historico;
                 } else if (tipo.toLowerCase().startsWith('econ')) {
@@ -730,7 +835,7 @@
         }
         
         // =========================================================================
-        // FIM DAS NOVAS FUNÇÕES
+        // FIM DAS FUNÇÕES DE HISTÓRICO
         // =========================================================================
 
         async function carregarDados() { 
@@ -790,7 +895,10 @@
             else if (id === 'painel-tv') mostrarPainelTV(); 
             else if (id === 'comuniqueses') mostrarPaginaComuniqueses(); 
             
-            // [NOVA ALTERAÇÃO] Lida com o clique no novo botão
+            // [NOVA ALTERAÇÃO] Lida com o clique na página de visualização
+            else if (id === 'metas-acumuladas') mostrarMetasAcumuladas(database.obras);
+            
+            // [ALTERAÇÃO EXISTENTE] Lida com o clique no novo botão
             else if (id === 'lancar-historico') mostrarPaginaHistorico();
             
             else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); } 
@@ -840,7 +948,6 @@
                 const id = document.getElementById('cs-id').value;
                 const dR = new Date(document.getElementById('cs-data-recebimento').value + 'T00:00:00');
                 const pD = parseInt(document.getElementById('cs-prazo-dias').value, 10);
-                // [CORREÇÃO] A linha abaixo estava quebrada
                 dR.setDate(dR.getDate() + pD);
                 const dL = dR.toISOString().split('T')[0];
                 const cD = { protocolo: document.getElementById('cs-protocolo').value, orgaoEmissor: document.getElementById('cs-orgao').value, dataRecebimento: document.getElementById('cs-data-recebimento').value, prazoDias: pD, dataLimite: dL, assunto: document.getElementById('cs-assunto').value, responsavel: document.getElementById('cs-responsavel').value, status: document.getElementById('cs-status').value, dataResposta: document.getElementById('cs-data-resposta').value || null, oficioResposta: document.getElementById('cs-oficio-resposta').value || '', observacao: document.getElementById('cs-observacao').value || '', };
