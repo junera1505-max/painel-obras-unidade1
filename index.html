@@ -188,7 +188,8 @@
             display: block;
         }
 
-        @media (max-width: 768px) {
+        /* [NOVA ALTERAÇÃO] Aumentando o breakpoint para 992px */
+        @media (max-width: 992px) {
             body, html {
                 overflow-y: auto; 
                 overflow-x: hidden;
@@ -579,7 +580,7 @@
             const tipos = [
                 { key: 'dadosImobilizacao', nome: 'Imobilização' },
                 { key: 'dadosEconomia', nome: 'Economia' },
-                { key: 'dadosAvanceFisico', nome: 'Avanço' }
+                { key: 'dadosAvanceFisico', nome: 'Avanço Físico' }
             ];
 
             // 1. Loop por todas as obras REAIS
@@ -844,8 +845,11 @@
                     let row = [obraName, metrica];
                     for (const month of sortedMonths) {
                         const valor = dataMatrix[obraName][metrica][month] || 0;
-                        // Converte para string pt-BR (com vírgula decimal)
-                        row.push(String(valor).replace('.', ','));
+                        
+                        // [NOVA ALTERAÇÃO] CORREÇÃO PARA O EXCEL
+                        // Remove a conversão para string com vírgula.
+                        // Agora ele exporta o número "puro" (ex: 12345.67)
+                        row.push(valor);
                     }
                     csvContent.push(row.join(';'));
                 }
@@ -887,7 +891,7 @@
                 { key: 'dadosAvanceFisico', nome: 'Avanço' } // Adicionando Avanço
             ];
 
-            // [NOVA ALTERAÇÃO] Aplicando a mesma ordem personalizada da página de visualização
+            // [ALTERAÇÃO EXISTENTE] Aplicando a mesma ordem personalizada da página de visualização
             const ordemDosCards = ["1B1", "1A2", "1B2", "1A1", "6A", "17B", "17A"];
             const ordemMap = new Map(ordemDosCards.map((nome, index) => [nome, index]));
             
@@ -1212,7 +1216,8 @@
         overlayEl.addEventListener('click', closeSidebar);
         
         navList.addEventListener('click', (e) => {
-            if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+            // [NOVA ALTERAÇÃO] Aumentando o breakpoint para 992px
+            if (e.target.tagName === 'A' && window.innerWidth <= 992) {
                 closeSidebar();
             }
         });
