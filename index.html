@@ -740,6 +740,10 @@
             // [ALTERAÇÃO EXISTENTE] Mudando a ordem de DESC para ASC (crescente)
             const historicoOrdenado = [...historico].sort((a, b) => a.mes.localeCompare(b.mes));
 
+            // [NOVA ALTERAÇÃO] Inicializa os totais
+            let totalMeta = 0;
+            let totalRealizado = 0;
+
             // Inicia a tabela
             let tabelaHtml = `
                 <div class="cs-table-wrapper" style="max-height: 300px; overflow-y: auto;">
@@ -760,6 +764,10 @@
                 const meta = item.meta || 0;
                 const realizado = item.realizado || 0;
                 const diff = realizado - meta;
+
+                // [NOVA ALTERAÇÃO] Soma os totais
+                totalMeta += meta;
+                totalRealizado += realizado;
                 
                 // Define a cor da diferença (verde se positivo, vermelho se negativo)
                 let diffClass = '';
@@ -775,6 +783,22 @@
                     </tr>
                 `;
             }
+
+            // [NOVA ALTERAÇÃO] Calcula os totais e a classe da diferença
+            const totalDiff = totalRealizado - totalMeta;
+            let diffClassTotal = '';
+            if (totalDiff > 0) diffClassTotal = 'goal-surpassed';
+            if (totalDiff < 0) diffClassTotal = 'prazo-vencido';
+
+            // [NOVA ALTERAÇÃO] Adiciona a linha de total
+            tabelaHtml += `
+                <tr style="background-color: #f8faff; border-top: 2px solid #dbe3f0;">
+                    <td style="font-weight: 700;">Total</td>
+                    <td style="font-weight: 700;">${formatFn(totalMeta)}</td>
+                    <td style="font-weight: 700;">${formatFn(totalRealizado)}</td>
+                    <td style="font-weight: 700;" class="${diffClassTotal}">${formatFn(totalDiff)}</td>
+                </tr>
+            `;
 
             tabelaHtml += `</tbody></table></div>`;
             return tabelaHtml;
@@ -846,10 +870,9 @@
                     for (const month of sortedMonths) {
                         const valor = dataMatrix[obraName][metrica][month] || 0;
                         
-                        // [NOVA ALTERAÇÃO] CORREÇÃO PARA O EXCEL
-                        // Remove a conversão para string com vírgula.
-                        // Agora ele exporta o número "puro" (ex: 12345.67)
-                        row.push(valor);
+                        // [ALTERAÇÃO EXISTENTE] CORREÇÃO PARA O EXCEL
+                        // Exporta o número "puro" (ex: 12345.67)
+                        row.push(valor); 
                     }
                     csvContent.push(row.join(';'));
                 }
