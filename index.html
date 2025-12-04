@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento de Obras</title>
+    <title>Sistema de Acompanhamento de Obras - Edição Natalina 🎅</title>
     
     <style>
-        /* CSS completo, sem alterações */
+        /* CSS ORIGINAL (Base) */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         body, html { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; color: #333; height: 100%; overflow: hidden; background-color: #f4f7fa; }
         * { box-sizing: border-box; }
         .system-container { display: flex; height: 100vh; transition: all 0.3s ease-in-out; }
-        .sidebar { width: 280px; background-color: rgba(30, 58, 95, 0.85); color: white; padding: 20px; display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 2px 0 10px rgba(0,0,0,0.1); transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out; overflow-y: auto; }
+        .sidebar { width: 280px; background-color: rgba(30, 58, 95, 0.85); color: white; padding: 20px; display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 2px 0 10px rgba(0,0,0,0.1); transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out; overflow-y: auto; position: relative; z-index: 10; }
         .sidebar.hidden { width: 0; opacity: 0; padding: 0; pointer-events: none; }
+        .sidebar-header { position: relative; }
         .sidebar-header .company-logo { position: static; width: 80%; margin: 0 auto 30px auto; display: block; }
         #main-nav { flex-grow: 1; overflow-y: auto; margin-bottom: 20px; }
         #main-nav ul { list-style-type: none; padding: 0; margin: 0; }
         #main-nav li a { display: block; padding: 15px 20px; color: #e0e0e0; text-decoration: none; border-radius: 8px; margin-bottom: 5px; font-weight: 500; transition: all 0.2s ease; cursor: pointer; position: relative; background-color: transparent; }
         #main-nav li a:hover { background-color: rgba(255, 255, 255, 0.1); color: white; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
         #main-nav li a.active { background-color: #ffffff; color: #1e3a5f; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transform: translateY(-2px); }
-        .content-area { flex-grow: 1; padding: 40px; overflow-y: auto; background-color: #f4f7fa; transition: padding-left 0.3s ease-in-out; position: relative; }
+        .content-area { flex-grow: 1; padding: 40px; overflow-y: auto; background-color: #f4f7fa; transition: padding-left 0.3s ease-in-out; position: relative; z-index: 5; }
         .content-area.fullscreen { padding: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         .content-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;}
         .content-header h1 { font-size: 2.2rem; color: #1e3a5f; margin: 0; }
@@ -29,7 +30,7 @@
         .btn-secondary { background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 6px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
         .btn-secondary:hover { background-color: #5a6268; }
         .sidebar-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); flex-shrink: 0; }
-        #btn-adicionar-contrato { width: 100%; padding: 15px; background-color: #4caf50; color: white; border: none; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; }
+        #btn-adicionar-contrato { width: 100%; padding: 15px; background-color: #4caf50; color: white; border: none; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; position: relative; }
         #btn-adicionar-contrato:hover { background-color: #45a049; }
         .danger-zone { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
         .danger-zone h3 { color: #c82333; }
@@ -188,7 +189,7 @@
             display: block;
         }
 
-        /* [NOVA ALTERAÇÃO] Aumentando o breakpoint para 992px */
+        /* RESPONSIVIDADE ORIGINAL */
         @media (max-width: 992px) {
             body, html {
                 overflow-y: auto; 
@@ -230,7 +231,7 @@
                 grid-column: 1 / 1; 
             }
             fieldset {
-                 grid-column: 1 / 1; 
+                grid-column: 1 / 1; 
             }
             .metrics {
                 grid-template-columns: 1fr; 
@@ -246,9 +247,193 @@
                 font-size: 1.5rem; 
             }
         }
+        
+        /* ============================================== */
+        /* 🔥🎄 [NOVO BLOCO DE ESTILOS] TEMA NATALINO 🎄🔥 */
+        /* ============================================== */
+        
+        /* 1. Cores de Layout e Sidebar */
+        .christmas-theme body, .christmas-theme html {
+            background-color: #F0F8FF; /* Azul Gelo/Neve */
+        }
+        
+        .christmas-theme .sidebar {
+            background-color: #C0392B; /* Vermelho bordô */
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 2px 0 15px rgba(0,0,0,0.3);
+        }
+
+        .christmas-theme .sidebar-toggle {
+            background: #27AE60; /* Verde Destaque */
+        }
+
+        /* 2. Navegação (Links) */
+        .christmas-theme #main-nav li a {
+            color: #F0F0F0; /* Branca Suave */
+        }
+        
+        .christmas-theme #main-nav li a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #FFFFFF;
+        }
+
+        .christmas-theme #main-nav li a.active {
+            background-color: #27AE60; /* Verde Ativo */
+            color: white;
+            font-weight: 700;
+        }
+
+        .christmas-theme a[data-id="painel-tv"]::before {
+            content: '🎅 '; /* Ícone Papai Noel */
+            margin-right: 5px;
+        }
+
+        .christmas-theme a[data-id="lancar-historico"] {
+            color: #FFD700 !important; /* Dourado */
+            font-weight: 700;
+        }
+        .christmas-theme a[data-id="metas-acumuladas"] {
+            color: #fff;
+        }
+        
+        /* 3. Cores de Destaque */
+        .christmas-theme .content-header h1 {
+            color: #C0392B; /* Vermelho */
+        }
+
+        .christmas-theme .metric-card .value {
+            color: #C0392B; /* Valores em Vermelho */
+        }
+        
+        .christmas-theme .metric-card .value.goal, 
+        .christmas-theme .progress-bar-fill {
+            background-color: #27AE60 !important; /* Verde em Progresso/Metas */
+            color: white !important;
+        }
+        
+        /* Progresso de Avanço Físico */
+        .christmas-theme .progress-bar-fill-sewage {
+            background-color: #C0392B !important; 
+        }
+        .christmas-theme .progress-bar-sewage::before, 
+        .christmas-theme .progress-bar-sewage::after {
+            color: white;
+        }
+
+        /* 4. Botões e Ações */
+        .christmas-theme .btn-primary { 
+            background-color: #27AE60; /* Verde Esmeralda */
+        }
+        .christmas-theme .btn-primary:hover { 
+            background-color: #1E8449; /* Verde mais escuro no hover */
+        }
+        .christmas-theme #btn-excluir-contrato {
+            background-color: #C0392B; /* Vermelho no botão de perigo */
+        }
+        .christmas-theme #btn-adicionar-contrato {
+            background-color: #FFD700; /* Dourado */
+            color: #C0392B; /* Texto Vermelho */
+            font-weight: 800;
+        }
+        .christmas-theme #btn-adicionar-contrato::before {
+            content: '🎁 '; /* Substitua o '+' por um presente */
+            font-size: 1.1rem;
+            margin-right: 5px;
+        }
+        .christmas-theme #btn-adicionar-contrato:hover {
+            background-color: #FFA500 !important;
+        }
+        
+        /* 5. Calendário */
+        .christmas-theme .day.future-workday {
+            background-color: #D6EAF8; /* Azul claro (Neve) */
+        }
+        .christmas-theme .day.today {
+            background-color: #f7e1b5; /* Cor de Vela / Dourado Suave */
+            border: 2px solid #D4AC0D;
+        }
+        .christmas-theme .day.holiday {
+            background-color: #FADBD8; /* Cor de Balas/Doce */
+            font-weight: 700;
+        }
+
+        /* -------------------------------------- */
+        /* EFEITOS ESPECIAIS (NEVE, GUIRLANDA, NOEL) */
+        /* -------------------------------------- */
+
+        /* 6. Neve Caindo (Snowfall) */
+        .christmas-theme {
+            position: relative;
+            overflow: hidden !important; /* Garante que a neve não cause scrollbars */
+        }
+
+        .christmas-theme .snowflake {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 9999;
+            animation: snowfall linear infinite;
+            filter: drop-shadow(0 0 1px rgba(0,0,0,0.1));
+        }
+
+        @keyframes snowfall {
+            0% { transform: translate(0, -100px); opacity: 0; }
+            5% { opacity: 1; }
+            95% { opacity: 1; }
+            100% { transform: translate(0, 100vh); opacity: 0; }
+        }
+
+        /* Aplica diferentes speeds e delays (o JavaScript fará o cálculo final) */
+        /* As classes .flake-1, .flake-2, etc. serão adicionadas pelo JS */
+        
+        /* 7. Guirlanda na Sidebar */
+        .christmas-theme .sidebar-header::before {
+            content: '🌿'; /* Usando emojis para simplicidade */
+            position: absolute;
+            top: -5px;
+            right: 15px;
+            font-size: 2rem;
+            transform: rotate(15deg);
+            z-index: 11;
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.5));
+            animation: pulse-guirlanda 2s infinite alternate;
+        }
+        @keyframes pulse-guirlanda {
+            from { transform: scale(1) rotate(15deg); }
+            to { transform: scale(1.05) rotate(15deg); }
+        }
+
+        /* 8. Papai Noel Escondido (easter egg) */
+        .christmas-theme .santa-watcher {
+            position: fixed;
+            bottom: -50px; /* Escondido */
+            right: 20px;
+            font-size: 5rem;
+            cursor: pointer;
+            z-index: 999;
+            transition: bottom 1s ease-out;
+            animation: bob-santa 5s infinite;
+            text-shadow: 2px 2px #C0392B;
+        }
+        /* Efeito de "espiando" */
+        .christmas-theme .santa-watcher:hover {
+            bottom: -5px; /* Aparece um pouco no hover */
+        }
+        @keyframes bob-santa {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+
     </style>
 </head>
-<body>
+<body class="christmas-theme"> <div id="snow-container"></div>
+    
+    <div class="santa-watcher" title="Ho Ho Ho!">🎅</div>
 
     <button id="sidebar-toggle-btn" class="sidebar-toggle" aria-label="Abrir menu" aria-expanded="false">
         <span></span>
@@ -332,12 +517,65 @@
     // SCRIPT COMPLETO (v12 - Removido "Casas" + Responsivo + Modo de Edição + "Economias" nas metas)
     // ======================================================================================================
     /**
-    * @author ERIVANDRO JUNIOR
+    * @author ERIVANDRO JUNIOR (com adição do tema e neve)
     */
+
+    // =========================================================================
+    // [NOVA ALTERAÇÃO] LÓGICA DA NEVE E EFEITOS DE TEMA
+    // =========================================================================
+    function createSnowflake() {
+        const snowContainer = document.getElementById('snow-container');
+        const flake = document.createElement('div');
+        flake.classList.add('snowflake');
+        
+        // Posicionamento aleatório na largura
+        flake.style.left = `${Math.random() * 100}vw`;
+        
+        // Tamanho e opacidade aleatórios (para dar sensação de profundidade)
+        const size = Math.random() * 5 + 5; // 5px a 10px
+        flake.style.width = `${size}px`;
+        flake.style.height = `${size}px`;
+        flake.style.opacity = Math.random() * 0.5 + 0.5; // 50% a 100%
+
+        // Duração e delay da animação
+        const duration = Math.random() * 10 + 15; // 15s a 25s
+        const delay = Math.random() * 10;
+        
+        // Aplica a animação
+        flake.style.animationDuration = `${duration}s`;
+        flake.style.animationDelay = `-${delay}s`; // Começa em posições aleatórias
+        
+        snowContainer.appendChild(flake);
+
+        // Remove a neve para evitar sobrecarga de memória depois que ela sair da tela
+        setTimeout(() => {
+            flake.remove();
+        }, duration * 1000);
+    }
+
+    function startSnowfall(numberOfFlakes = 50) {
+        // Gera o número inicial de flocos
+        for (let i = 0; i < numberOfFlakes; i++) {
+            createSnowflake();
+        }
+
+        // Continua gerando novos flocos a cada 500ms
+        setInterval(createSnowflake, 500);
+    }
+    // =========================================================================
+    // FIM DA LÓGICA DA NEVE E EFEITOS DE TEMA
+    // =========================================================================
+
 
     let isAdmin = false;
 
     document.addEventListener('DOMContentLoaded', () => {
+
+        // Inicia a neve caindo logo que a página carrega
+        if (document.body.classList.contains('christmas-theme')) {
+            startSnowfall(70); // 70 flocos para um efeito visível e não exagerado
+        }
+
 
         const urlParams = new URLSearchParams(window.location.search);
         isAdmin = urlParams.get('modo') === 'edicao'; 
@@ -906,9 +1144,9 @@
         // =========================================================================
         
         /**
-        * @author ERIVANDRO JUNIOR
-        * Gera o texto formatado a partir do banco de dados para o textarea.
-        */
+         * @author ERIVANDRO JUNIOR
+         * Gera o texto formatado a partir do banco de dados para o textarea.
+         */
         function gerarTextoHistorico(obras) {
             let output = [];
             const tipos = [
@@ -957,9 +1195,9 @@
         }
 
         /**
-        * @author ERIVANDRO JUNIOR
-        * Processa o texto do textarea e atualiza o database.
-        */
+         * @author ERIVANDRO JUNIOR
+         * Processa o texto do textarea e atualiza o database.
+         */
         function handleSalvarHistorico() {
             const text = document.getElementById('historico-textarea').value;
             const lines = text.split('\n');
@@ -1043,9 +1281,9 @@
         }
 
         /**
-        * @author ERIVANDRO JUNIOR
-        * Mostra a página de inserção de histórico.
-        */
+         * @author ERIVANDRO JUNIOR
+         * Mostra a página de inserção de histórico.
+         */
         function mostrarPaginaHistorico() {
             if (!isAdmin) {
                 contentArea.innerHTML = `<div class="content-header"><h1>Acesso Negado</h1><p>Esta área é restrita.</p></div>`;
