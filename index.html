@@ -435,21 +435,21 @@
             top: 5%; /* Altura fixa no topo */
             /* Começa fora da tela à direita (100vw + 300px para o tamanho do emoji) */
             right: -300px; 
-            font-size: 4rem; 
+            height: 100px; /* Definindo altura para imagem */
+            width: auto;
             opacity: 0;
             pointer-events: none;
             z-index: 9998;
             will-change: transform, opacity; 
             display: none; 
-            /* MODIFICADO: Flip horizontal para o trenó (ícone emoji) olhar para a esquerda */
-            transform: scaleX(-1);
+            /* Para a imagem, não precisamos de scaleX(-1) se a imagem já aponta para a esquerda */
         }
         
         /* Animação Keyframes para o voo (Direita para Esquerda) */
         @keyframes fly-sleigh-rtl {
             0% {
                 /* Começa 100% à direita */
-                transform: translateX(0) scaleX(-1); 
+                transform: translateX(0); 
                 opacity: 0;
             }
             5% {
@@ -460,7 +460,7 @@
             }
             100% {
                 /* Move para fora da tela à esquerda */
-                transform: translateX(calc(-100vw - 300px)) scaleX(-1); 
+                transform: translateX(calc(-100vw - 300px)); 
                 opacity: 0;
             }
         }
@@ -469,7 +469,9 @@
 <body class="christmas-theme">
     <div id="snow-container"></div>
     
-    <div id="santa-sleigh" title="O Trenó está de passagem!">🛷🎅</div>
+    <div id="santa-sleigh" title="O Trenó está de passagem!">
+        <img src='https://pt.pngtree.com/freepng/santa-claus-in-sleigh-with-reindeer-silhouette_22996301.html' alt='Papai Noel no trenó' style='display: block; height: 100%; width: auto;'>
+    </div>
     
     <div class="santa-watcher" title="Ho Ho Ho!">🎅</div>
 
@@ -552,7 +554,7 @@
 
     <script>
     // ======================================================================================================
-    // SCRIPT COMPLETO (v14 - Trenó RTL, Ícone Sleigh, Neve Intensificada)
+    // SCRIPT COMPLETO (v15 - Imagem PNG, Trenó RTL, Neve Intensificada)
     // ======================================================================================================
     /**
     * @author ERIVANDRO JUNIOR (com adição do tema, neve e trenó)
@@ -608,7 +610,6 @@
 
         // 1. Define a duração e tempo de espera
         const rideDuration = 8; // Duração do voo (segundos)
-        // MODIFICADO: Usando a nova animação fly-sleigh-rtl
         const animationName = 'fly-sleigh-rtl'; 
         
         // 2. Cria a função de voo
@@ -624,7 +625,6 @@
             // Esconde o trenó quando a animação terminar
             setTimeout(() => {
                 sleigh.style.display = 'none';
-                // O reset de posição é gerenciado pela animação @keyframes fly-sleigh-rtl
             }, rideDuration * 1000);
         };
 
