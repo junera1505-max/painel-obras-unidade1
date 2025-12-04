@@ -427,46 +427,49 @@
         }
         
         /* -------------------------------------- */
-        /* NOVO: TRENÓ VOADOR */
+        /* NOVO: TRENÓ VOADOR (Direita para Esquerda - RTL) */
         /* -------------------------------------- */
         
         #santa-sleigh {
             position: fixed;
             top: 5%; /* Altura fixa no topo */
-            left: -300px; /* Começa fora da tela à esquerda */
-            font-size: 4rem; /* Tamanho do trenó/emoji */
+            /* Começa fora da tela à direita (100vw + 300px para o tamanho do emoji) */
+            right: -300px; 
+            font-size: 4rem; 
             opacity: 0;
             pointer-events: none;
             z-index: 9998;
-            transition: transform 0.1s linear; /* Movimento sem aceleração para dar efeito de voo constante */
-            will-change: transform, opacity; /* Otimização de performance */
-            display: none; /* Só aparece quando ativado pelo JS */
+            will-change: transform, opacity; 
+            display: none; 
+            /* MODIFICADO: Flip horizontal para o trenó (ícone emoji) olhar para a esquerda */
+            transform: scaleX(-1);
         }
         
-        /* Animação Keyframes para o voo */
-        @keyframes fly-sleigh {
+        /* Animação Keyframes para o voo (Direita para Esquerda) */
+        @keyframes fly-sleigh-rtl {
             0% {
-                transform: translateX(0); /* Posição inicial (fora da esquerda) */
+                /* Começa 100% à direita */
+                transform: translateX(0) scaleX(-1); 
                 opacity: 0;
             }
             5% {
-                opacity: 1; /* Aparece rápido */
+                opacity: 1; 
             }
             95% {
                 opacity: 1;
             }
             100% {
-                transform: translateX(calc(100vw + 300px)); /* Move para fora da tela à direita */
+                /* Move para fora da tela à esquerda */
+                transform: translateX(calc(-100vw - 300px)) scaleX(-1); 
                 opacity: 0;
             }
         }
-
     </style>
 </head>
 <body class="christmas-theme">
     <div id="snow-container"></div>
     
-    <div id="santa-sleigh" title="O Trenó está de passagem!">🦌🎅</div>
+    <div id="santa-sleigh" title="O Trenó está de passagem!">🛷🎅</div>
     
     <div class="santa-watcher" title="Ho Ho Ho!">🎅</div>
 
@@ -549,7 +552,7 @@
 
     <script>
     // ======================================================================================================
-    // SCRIPT COMPLETO (v13 - Com Trenó e Neve Aumentada)
+    // SCRIPT COMPLETO (v14 - Trenó RTL, Ícone Sleigh, Neve Intensificada)
     // ======================================================================================================
     /**
     * @author ERIVANDRO JUNIOR (com adição do tema, neve e trenó)
@@ -594,19 +597,19 @@
             createSnowflake();
         }
 
-        // Continua gerando novos flocos a cada 100ms para alta densidade
-        // MODIFICADO: Reduzido o intervalo para aumentar a densidade da neve
+        // MODIFICADO: Continua gerando novos flocos a cada 100ms para alta densidade
         setInterval(createSnowflake, 100); 
     }
     
-    // [NOVA FUNÇÃO] Lógica do Trenó
+    // [MODIFICADA] Lógica do Trenó (Direita para Esquerda)
     function startSleighRide() {
         const sleigh = document.getElementById('santa-sleigh');
         if (!sleigh) return;
 
         // 1. Define a duração e tempo de espera
         const rideDuration = 8; // Duração do voo (segundos)
-        const animationName = 'fly-sleigh';
+        // MODIFICADO: Usando a nova animação fly-sleigh-rtl
+        const animationName = 'fly-sleigh-rtl'; 
         
         // 2. Cria a função de voo
         const flySleigh = () => {
@@ -614,14 +617,14 @@
             sleigh.style.animation = 'none';
             sleigh.offsetWidth; // Trigger reflow
             
-            // Re-aplica a animação
+            // Re-aplica a animação com a nova direção
             sleigh.style.animation = `${animationName} ${rideDuration}s linear`;
             sleigh.style.display = 'block';
             
             // Esconde o trenó quando a animação terminar
             setTimeout(() => {
                 sleigh.style.display = 'none';
-                sleigh.style.left = '-300px'; // Reseta a posição inicial fora da tela
+                // O reset de posição é gerenciado pela animação @keyframes fly-sleigh-rtl
             }, rideDuration * 1000);
         };
 
@@ -632,7 +635,7 @@
         return setInterval(flySleigh, 10000); // 10000ms = 10 segundos
     }
     
-    let sleighInterval = null; // Variável global para controlar o intervalo do trenó
+    let sleighInterval = null; 
 
     function stopSleighRide() {
         if (sleighInterval) {
