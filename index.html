@@ -386,13 +386,10 @@
             95% { opacity: 1; }
             100% { transform: translate(0, 100vh); opacity: 0; }
         }
-
-        /* Aplica diferentes speeds e delays (o JavaScript fará o cálculo final) */
-        /* As classes .flake-1, .flake-2, etc. serão adicionadas pelo JS */
         
         /* 7. Guirlanda na Sidebar */
         .christmas-theme .sidebar-header::before {
-            content: '🌿'; /* Usando emojis para simplicidade */
+            content: '🌿'; 
             position: absolute;
             top: -5px;
             right: 15px;
@@ -428,10 +425,48 @@
             50% { transform: translateY(-5px); }
             100% { transform: translateY(0px); }
         }
+        
+        /* -------------------------------------- */
+        /* NOVO: TRENÓ VOADOR */
+        /* -------------------------------------- */
+        
+        #santa-sleigh {
+            position: fixed;
+            top: 5%; /* Altura fixa no topo */
+            left: -300px; /* Começa fora da tela à esquerda */
+            font-size: 4rem; /* Tamanho do trenó/emoji */
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9998;
+            transition: transform 0.1s linear; /* Movimento sem aceleração para dar efeito de voo constante */
+            will-change: transform, opacity; /* Otimização de performance */
+            display: none; /* Só aparece quando ativado pelo JS */
+        }
+        
+        /* Animação Keyframes para o voo */
+        @keyframes fly-sleigh {
+            0% {
+                transform: translateX(0); /* Posição inicial (fora da esquerda) */
+                opacity: 0;
+            }
+            5% {
+                opacity: 1; /* Aparece rápido */
+            }
+            95% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(calc(100vw + 300px)); /* Move para fora da tela à direita */
+                opacity: 0;
+            }
+        }
 
     </style>
 </head>
-<body class="christmas-theme"> <div id="snow-container"></div>
+<body class="christmas-theme">
+    <div id="snow-container"></div>
+    
+    <div id="santa-sleigh" title="O Trenó está de passagem!">🦌🎅</div>
     
     <div class="santa-watcher" title="Ho Ho Ho!">🎅</div>
 
@@ -514,14 +549,14 @@
 
     <script>
     // ======================================================================================================
-    // SCRIPT COMPLETO (v12 - Removido "Casas" + Responsivo + Modo de Edição + "Economias" nas metas)
+    // SCRIPT COMPLETO (v13 - Com Trenó e Neve Aumentada)
     // ======================================================================================================
     /**
-    * @author ERIVANDRO JUNIOR (com adição do tema e neve)
+    * @author ERIVANDRO JUNIOR (com adição do tema, neve e trenó)
     */
 
     // =========================================================================
-    // [NOVA ALTERAÇÃO] LÓGICA DA NEVE E EFEITOS DE TEMA
+    // [MODIFICADO] LÓGICA DA NEVE E EFEITOS DE TEMA
     // =========================================================================
     function createSnowflake() {
         const snowContainer = document.getElementById('snow-container');
@@ -559,11 +594,60 @@
             createSnowflake();
         }
 
-        // Continua gerando novos flocos a cada 500ms
-        setInterval(createSnowflake, 500);
+        // Continua gerando novos flocos a cada 100ms para alta densidade
+        // MODIFICADO: Reduzido o intervalo para aumentar a densidade da neve
+        setInterval(createSnowflake, 100); 
     }
+    
+    // [NOVA FUNÇÃO] Lógica do Trenó
+    function startSleighRide() {
+        const sleigh = document.getElementById('santa-sleigh');
+        if (!sleigh) return;
+
+        // 1. Define a duração e tempo de espera
+        const rideDuration = 8; // Duração do voo (segundos)
+        const animationName = 'fly-sleigh';
+        
+        // 2. Cria a função de voo
+        const flySleigh = () => {
+            // Remove a animação anterior (se houver) e reseta a posição (para garantir que começa fora)
+            sleigh.style.animation = 'none';
+            sleigh.offsetWidth; // Trigger reflow
+            
+            // Re-aplica a animação
+            sleigh.style.animation = `${animationName} ${rideDuration}s linear`;
+            sleigh.style.display = 'block';
+            
+            // Esconde o trenó quando a animação terminar
+            setTimeout(() => {
+                sleigh.style.display = 'none';
+                sleigh.style.left = '-300px'; // Reseta a posição inicial fora da tela
+            }, rideDuration * 1000);
+        };
+
+        // 3. Inicia o voo e define o intervalo
+        flySleigh(); // Voo inicial
+        
+        // MODIFICADO: Voo a cada 10 segundos
+        return setInterval(flySleigh, 10000); // 10000ms = 10 segundos
+    }
+    
+    let sleighInterval = null; // Variável global para controlar o intervalo do trenó
+
+    function stopSleighRide() {
+        if (sleighInterval) {
+            clearInterval(sleighInterval);
+            sleighInterval = null;
+        }
+        const sleigh = document.getElementById('santa-sleigh');
+        if (sleigh) {
+            sleigh.style.display = 'none';
+            sleigh.style.animation = 'none';
+        }
+    }
+
     // =========================================================================
-    // FIM DA LÓGICA DA NEVE E EFEITOS DE TEMA
+    // FIM DA LÓGICA DA NEVE E TRENÓ
     // =========================================================================
 
 
@@ -571,9 +655,9 @@
 
     document.addEventListener('DOMContentLoaded', () => {
 
-        // Inicia a neve caindo logo que a página carrega
+        // MODIFICADO: Aumentando a quantidade de flocos no carregamento
         if (document.body.classList.contains('christmas-theme')) {
-            startSnowfall(70); // 70 flocos para um efeito visível e não exagerado
+            startSnowfall(150); // 150 flocos iniciais para alta densidade
         }
 
 
@@ -621,6 +705,7 @@
         }
         
         function mostrarVisaoGeral(obras) { 
+            stopSleighRide(); // Para o trenó
             const tImobM = obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0), tImobA = obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0), tEconM = obras.reduce((s, o) => s + o.dadosEconomia.meta, 0), tEconA = obras.reduce((s, o) => s + o.dadosEconomia.atual, 0), tAvanceM = obras.reduce((s, o) => s + o.dadosAvanceFisico.meta, 0), tAvanceA = obras.reduce((s, o) => s + o.dadosAvanceFisico.atual, 0); 
             const pImob = calculatePercentage(tImobA, tImobM), pEcon = calculatePercentage(tEconA, tEconM), pAvance = calculatePercentage(tAvanceA, tAvanceM); 
             
@@ -631,6 +716,7 @@
         }
         
         function mostrarPaginaObra(o) {
+            stopSleighRide(); // Para o trenó
             const pI = calculatePercentage(o.dadosImobilizacao.atual, o.dadosImobilizacao.meta), pE = calculatePercentage(o.dadosEconomia.atual, o.dadosEconomia.meta), pA = calculatePercentage(o.dadosAvanceFisico.atual, o.dadosAvanceFisico.meta);
             const vIf = (o.dadosImobilizacao.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
             const readOnlyState = !isAdmin ? 'readonly' : '';
@@ -700,6 +786,7 @@
         function reiniciarTimerSlideshow() { clearInterval(slideshowInterval); slideshowInterval = setInterval(proximoSlide, 10000); }
         
         function mostrarPainelTV() { 
+            sleighInterval = startSleighRide(); // Inicia o trenó
             const eI = new Date(Date.UTC(2025, 11, 15)), eE = new Date(Date.UTC(2025, 11, 31)), eA = new Date(Date.UTC(2026, 11, 31)); 
             const localToday = new Date(); 
             const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); 
@@ -730,6 +817,7 @@
         function setupCalendarLogic(h) { const holidaySet = new Set(h); function rM(y, m, gC, tED) { const localToday = new Date(); const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const fD = new Date(y, m, 1), dIM = new Date(y, m + 1, 0).getDate(), sDOW = fD.getDay(); let gCs = []; gCs.push('<div class="week-number-header"></div>'); ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].forEach(n => gCs.push(`<div class="day-name">${n}</div>`)); for (let i = 0; i < sDOW; i++) gCs.push('<div class="empty-day"></div>'); for (let d = 1; d <= dIM; d++) { const cD = new Date(Date.UTC(y, m, d)); const cDOW = cD.getUTCDay(); if (cDOW === 0) gCs.push(`<div class="week-number">${gWN(cD)}</div>`); let cls = ['day']; if (cD.getTime() === today.getTime()) { cls.push('today'); } else if (cD < today) { cls.push('past-day'); } if (cD.getTime() === tED.getTime()) { cls.push('end-date'); } else if (cD > today && cD <= tED) { const iso = cD.toISOString().split('T')[0]; if (holidaySet.has(iso)) cls.push('holiday'); else if (cDOW === 0 || cDOW === 6) cls.push('weekend'); else cls.push('future-workday'); } gCs.push(`<div class="${cls.join(' ')}"><span class="day-of-month">${d}</span></div>`); } gC.innerHTML = gCs.join(''); } function gWN(d) { d = new Date(d); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); const yS = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); const wN = Math.ceil((((d - yS) / 864e5) + 1) / 7); return wN; } return { renderAllCalendars: function (s, e, c) { if (!c) return; c.innerHTML = ''; const mN = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]; let cD = new Date(s.getUTCFullYear(), s.getUTCMonth(), 1); while (cD <= e) { const y = cD.getFullYear(), m = cD.getMonth(); const mC = document.createElement('div'); mC.className = 'month'; mC.innerHTML = `<h3>${mN[m]} ${y}</h3><div class="calendar-grid"></div>`; const cG = mC.querySelector('.calendar-grid'); rM(y, m, cG, e); c.appendChild(mC); cD.setMonth(cD.getMonth() + 1); } } }; }
         
         function mostrarPaginaComuniqueses() {
+            stopSleighRide(); // Para o trenó
             const cs = database.comuniqueses || [];
             const adminButton = isAdmin ? '<button id="btn-novo-cs" class="btn-primary">+ Novo Comunique-se</button>' : '';
             const adminHeader = isAdmin ? '<th>Ações</th>' : '';
@@ -870,6 +958,7 @@
          * [FUNÇÃO MODIFICADA] Mostra a página "Metas Acumuladas" com agregação e sort
          */
         function mostrarMetasAcumuladas(obras) {
+            stopSleighRide(); // Para o trenó
             // [NOVA ALTERAÇÃO] Adicionando o botão de exportar
             contentArea.innerHTML = `
                 <div class="content-header">
@@ -1285,6 +1374,7 @@
          * Mostra a página de inserção de histórico.
          */
         function mostrarPaginaHistorico() {
+            stopSleighRide(); // Para o trenó
             if (!isAdmin) {
                 contentArea.innerHTML = `<div class="content-header"><h1>Acesso Negado</h1><p>Esta área é restrita.</p></div>`;
                 return;
@@ -1372,13 +1462,23 @@
             e.preventDefault(); 
             document.removeEventListener('keydown', handlePainelTVKeyPress); 
             clearInterval(slideshowInterval); 
+            
             const id = e.target.dataset.id; 
             const cA = navList.querySelector('a.active'); 
             if (cA) cA.classList.remove('active'); 
             e.target.classList.add('active'); 
+            
             if (document.fullscreenElement) document.exitFullscreen(); 
             sidebar.classList.remove('hidden'); 
             contentArea.classList.remove('fullscreen'); 
+            
+            // Lógica para o trenó (só deve rodar no 'painel-tv')
+            if (id === 'painel-tv') {
+                 sleighInterval = startSleighRide();
+            } else {
+                 stopSleighRide();
+            }
+            
             if (id === 'visao-geral') mostrarVisaoGeral(database.obras); 
             else if (id === 'painel-tv') mostrarPainelTV(); 
             else if (id === 'comuniqueses') mostrarPaginaComuniqueses(); 
