@@ -6,18 +6,16 @@
     <title>Sistema de Acompanhamento de Obras</title>
     
     <style>
-        /* CSS ORIGINAL (Base Profissional) */
+        /* CSS PROFISSIONAL RESTAURADO */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        
         body, html { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; color: #333; height: 100%; overflow: hidden; background-color: #f4f7fa; }
         * { box-sizing: border-box; }
+        .system-container { display: flex; height: 100vh; }
         
-        .system-container { display: flex; height: 100vh; transition: all 0.3s ease-in-out; }
-        
-        /* Sidebar em Azul Profissional */
+        /* Barra lateral Azul Escuro Profissional */
         .sidebar { 
             width: 280px; 
-            background-color: #1a2d42; /* Azul escuro sóbrio */
+            background-color: #0d1b2a; /* Azul Marinho Profissional */
             color: white; 
             padding: 20px; 
             display: flex; 
@@ -25,81 +23,64 @@
             flex-shrink: 0; 
             border-right: 1px solid rgba(255, 255, 255, 0.1); 
             box-shadow: 2px 0 10px rgba(0,0,0,0.1); 
-            transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out; 
             overflow-y: auto; 
             position: relative; 
             z-index: 10; 
         }
 
-        .sidebar.hidden { width: 0; opacity: 0; padding: 0; pointer-events: none; }
-        .sidebar-header { position: relative; }
-        .sidebar-header .company-logo { position: static; width: 80%; margin: 0 auto 30px auto; display: block; }
-        
-        #main-nav { flex-grow: 1; overflow-y: auto; margin-bottom: 20px; }
+        .sidebar-header .company-logo { width: 80%; margin: 0 auto 30px auto; display: block; }
+        #main-nav { flex-grow: 1; overflow-y: auto; }
         #main-nav ul { list-style-type: none; padding: 0; margin: 0; }
-        #main-nav li a { display: block; padding: 15px 20px; color: #ced4da; text-decoration: none; border-radius: 8px; margin-bottom: 5px; font-weight: 500; transition: all 0.2s ease; cursor: pointer; position: relative; }
-        
-        #main-nav li a:hover { background-color: rgba(255, 255, 255, 0.1); color: white; transform: translateY(-2px); }
-        #main-nav li a.active { background-color: #ffffff; color: #1a2d42; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transform: translateY(-2px); font-weight: 600; }
-        
-        .content-area { flex-grow: 1; padding: 40px; overflow-y: auto; background-color: #f4f7fa; transition: padding-left 0.3s ease-in-out; position: relative; z-index: 5; }
-        .content-area.fullscreen { padding: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        
-        .content-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;}
-        .content-header h1 { font-size: 2.2rem; color: #1a2d42; margin: 0; }
-        .content-header p { font-size: 1.1rem; color: #5a718c; margin: 0; }
-        
-        .btn-primary { background-color: #007bff; color: white; padding: 10px 20px; border-radius: 6px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
-        .btn-primary:hover { background-color: #0069d9; }
-        
-        .btn-secondary { background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 6px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
-        
-        .sidebar-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); flex-shrink: 0; }
-        #btn-adicionar-contrato { width: 100%; padding: 15px; background-color: #28a745; color: white; border: none; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; }
-        #btn-adicionar-contrato:hover { background-color: #218838; }
-
-        /* Estilos de Tabela e Cards */
-        .metric-card { background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #dbe3f0; box-shadow: 0 4px 12px rgba(0,20,60,0.05); }
-        .metric-card .value { font-size: 2.2rem; font-weight: 700; color: #007bff; }
-        
-        .progress-bar-container { background-color: #e9ecef; border-radius: 8px; height: 25px; margin-bottom: 15px; overflow: hidden; }
-        .progress-bar-fill { background-color: #28a745; height: 100%; width: 0%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem; transition: width 0.5s ease; }
-
-        /* Modais */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal.active { display: flex; }
-        .modal-content { background-color: #fff; width: 90%; max-width: 700px; border-radius: 12px; display: flex; flex-direction: column; }
-        .modal-header { padding: 15px 25px; border-bottom: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; }
-
-        /* Responsividade */
-        @media (max-width: 992px) {
-            .sidebar { position: fixed; left: -300px; height: 100vh; z-index: 998; }
-            .sidebar.is-open { left: 0; }
-            .sidebar-toggle { display: flex; position: fixed; top: 15px; left: 15px; z-index: 999; background: #1a2d42; border: none; border-radius: 8px; padding: 10px; cursor: pointer; }
-            .sidebar-toggle span { display: block; width: 25px; height: 3px; background: white; margin: 4px 0; }
+        #main-nav li a { 
+            display: block; 
+            padding: 12px 15px; 
+            color: #a0aec0; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            font-weight: 500; 
+            transition: all 0.2s ease; 
+            cursor: pointer; 
         }
+        #main-nav li a:hover { background-color: rgba(255, 255, 255, 0.05); color: white; }
+        #main-nav li a.active { background-color: #ffffff; color: #0d1b2a; font-weight: 600; }
+
+        .content-area { flex-grow: 1; padding: 40px; overflow-y: auto; background-color: #f4f7fa; position: relative; }
+        .content-header h1 { font-size: 2rem; color: #1e3a5f; margin: 0; }
+        
+        .btn-primary { background-color: #007bff; color: white; padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+        #btn-adicionar-contrato { 
+            width: 100%; 
+            padding: 12px; 
+            background-color: #38a169; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            margin-top: 20px;
+        }
+
+        /* Estilos de Dashboard e Tabelas */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px; }
+        .metric-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .metric-card .value { font-size: 2rem; font-weight: 700; color: #2b6cb0; }
+        .progress-bar-container { background: #edf2f7; border-radius: 10px; height: 20px; overflow: hidden; margin: 10px 0; }
+        .progress-bar-fill { background: #48bb78; height: 100%; transition: width 0.5s ease; }
     </style>
 </head>
 <body>
-    <button id="sidebar-toggle-btn" class="sidebar-toggle">
-        <span></span><span></span><span></span>
-    </button>
-    <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
     <div class="system-container">
         <aside class="sidebar">
             <header class="sidebar-header">
                 <img src="imagem2.png" alt="Logo" class="company-logo">
             </header>
-            <nav id="main-nav">
-                <ul>
-                    </ul>
-            </nav>
+            <nav id="main-nav"><ul></ul></nav>
             <div class="sidebar-footer">
-                <button id="btn-adicionar-contrato">Adicionar Novo Contrato</button>
+                <button id="btn-adicionar-contrato">+ Adicionar Novo Contrato</button>
             </div>
         </aside>
-        
         <main id="content-area" class="content-area">
             <div class="welcome-message">
                 <h1>Carregando...</h1>
@@ -109,69 +90,94 @@
     </div>
 
     <script>
-        /* SCRIPT LIMPO - Sem lógicas natalinas */
-        document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            isAdmin = urlParams.get('modo') === 'edicao'; 
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isAdmin = urlParams.get('modo') === 'edicao'; 
+        const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/68e8e81ad0ea881f409c51f0'; 
+        const API_KEY = '$2a$10$L4n/qlQ8LGkgQmd9p7zhaOAK6j5pgA.2Tq7xK019hUqDGNfPmqJ5O'; 
 
-            const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/68e8e81ad0ea881f409c51f0'; 
-            const API_KEY = '$2a$10$L4n/qlQ8LGkgQmd9p7zhaOAK6j5pgA.2Tq7xK019hUqDGNfPmqJ5O'; 
+        let database = { obras: [], comuniqueses: [] };
+        const navList = document.querySelector('#main-nav ul');
+        const contentArea = document.getElementById('content-area');
 
-            let database = { obras: [], comuniqueses: [] };
-            const navList = document.querySelector('#main-nav ul');
-            const contentArea = document.getElementById('content-area');
+        // Formatações
+        const formatCurrency = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-            // Funções de renderização originais...
-            function gerarNavegacao(obras) { 
-                navList.innerHTML = ''; 
-                navList.innerHTML += `<li><a data-id="painel-tv">Painel TV</a></li>`; 
-                navList.innerHTML += `<li><a data-id="visao-geral">Visão Geral</a></li>`; 
-                navList.innerHTML += `<li><a data-id="comuniqueses">Comunique-se</a></li>`; 
-                navList.innerHTML += `<li><a data-id="metas-acumuladas">Metas Acumuladas</a></li>`;
+        async function carregarDados() { 
+            try { 
+                const r = await fetch(JSONBIN_URL, { headers: { 'X-Master-Key': API_KEY } }); 
+                const data = await r.json(); 
+                database = data.record; 
+                renderizarNavegacao();
+                // Forçar o carregamento da Visão Geral no início
+                mostrarVisaoGeral();
+            } catch (e) { 
+                contentArea.innerHTML = "<h1>Erro ao carregar dados.</h1>";
+                console.error(e);
+            } 
+        }
 
-                if (isAdmin) {
-                    navList.innerHTML += `<li><a data-id="lancar-historico">Lançar Histórico</a></li>`;
-                }
-
-                obras.sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto)).forEach(o => { 
-                    navList.innerHTML += `<li><a data-id="${o.id}">${o.nomeCurto}</a></li>`; 
-                }); 
-                
-                // Ativar primeiro link por padrão
-                const firstLink = navList.querySelector('a');
-                if (firstLink) firstLink.classList.add('active');
-                
-                navList.querySelectorAll('a').forEach(l => l.addEventListener('click', handleNavClick)); 
-            }
-
-            // [RESTANTE DA LÓGICA DO SEU SCRIPT SEM NEVE/TRENÓ]
-            // ... (Manter as funções carregarDados, salvarDados, mostrarVisaoGeral etc.)
+        function renderizarNavegacao() {
+            navList.innerHTML = `
+                <li><a data-id="visao-geral" class="active">Visão Geral</a></li>
+                <li><a data-id="comuniqueses">Comunique-se</a></li>
+                <li><a data-id="metas-acumuladas">Metas Acumuladas</a></li>
+            `;
             
-            async function carregarDados() { 
-                try { 
-                    const r = await fetch(JSONBIN_URL, { headers: { 'X-Master-Key': API_KEY } }); 
-                    const d = await r.json(); 
-                    database = d.record; 
-                    gerarNavegacao(database.obras); 
-                    // Carrega Painel TV por padrão
-                    document.querySelector('a[data-id="painel-tv"]').click();
-                } catch (e) { 
-                    console.error("Erro:", e); 
-                } 
-            }
+            database.obras.forEach(obra => {
+                navList.innerHTML += `<li><a data-id="${obra.id}">${obra.nomeCurto}</a></li>`;
+            });
 
-            function handleNavClick(e) {
-                const id = e.target.dataset.id;
-                document.querySelectorAll('#main-nav a').forEach(a => a.classList.remove('active'));
-                e.target.classList.add('active');
-                
-                // Lógica de roteamento baseada no ID...
-                if (id === 'painel-tv') { /* chamar função original */ }
-                // etc...
-            }
+            navList.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    document.querySelectorAll('#main-nav a').forEach(a => a.classList.remove('active'));
+                    e.target.classList.add('active');
+                    roteador(e.target.dataset.id);
+                });
+            });
+        }
 
-            carregarDados();
-        });
+        function roteador(id) {
+            if (id === 'visao-geral') mostrarVisaoGeral();
+            else if (id === 'comuniqueses') contentArea.innerHTML = "<h1>Comunique-se</h1><p>Conteúdo em desenvolvimento.</p>";
+            else if (id === 'metas-acumuladas') contentArea.innerHTML = "<h1>Metas Acumuladas</h1>";
+            else {
+                const obra = database.obras.find(o => o.id === id);
+                if (obra) mostrarPaginaObra(obra);
+            }
+        }
+
+        function mostrarVisaoGeral() {
+            const totalImob = database.obras.reduce((acc, o) => acc + (o.dadosImobilizacao?.atual || 0), 0);
+            contentArea.innerHTML = `
+                <div class="content-header"><h1>Visão Geral do Projeto</h1></div>
+                <div class="dashboard-grid">
+                    <div class="metric-card">
+                        <div class="label">Total Imobilizado</div>
+                        <div class="value">${formatCurrency(totalImob)}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function mostrarPaginaObra(obra) {
+            contentArea.innerHTML = `
+                <div class="content-header"><h1>${obra.nomeCompleto}</h1></div>
+                <div class="dashboard-grid">
+                    <div class="metric-card">
+                        <h3>Progresso da Obra</h3>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: 70%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (!isAdmin) document.getElementById('btn-adicionar-contrato').style.display = 'none';
+
+        carregarDados();
+    });
     </script>
 </body>
 </html>
