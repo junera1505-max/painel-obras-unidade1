@@ -6,180 +6,1247 @@
     <title>Sistema de Acompanhamento de Obras</title>
     
     <style>
-        /* CSS ORIGINAL RESTAURADO (Sem Natal) */
+        /* CSS completo, sem alterações */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         body, html { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; color: #333; height: 100%; overflow: hidden; background-color: #f4f7fa; }
         * { box-sizing: border-box; }
         .system-container { display: flex; height: 100vh; transition: all 0.3s ease-in-out; }
-        
-        /* BARRA LATERAL AZUL PROFISSIONAL */
-        .sidebar { 
-            width: 280px; 
-            background-color: #0b1a2a; /* Azul escuro sóbrio */
-            color: white; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            flex-shrink: 0; 
-            border-right: 1px solid rgba(255, 255, 255, 0.1); 
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1); 
-            transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out; 
-            overflow-y: auto; 
-            position: relative; 
-            z-index: 10; 
-        }
+        .sidebar { width: 280px; background-color: rgba(30, 58, 95, 0.85); color: white; padding: 20px; display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 2px 0 10px rgba(0,0,0,0.1); transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out; overflow-y: auto; }
         .sidebar.hidden { width: 0; opacity: 0; padding: 0; pointer-events: none; }
-        .sidebar-header .company-logo { width: 80%; margin: 0 auto 30px auto; display: block; }
-        
+        .sidebar-header .company-logo { position: static; width: 80%; margin: 0 auto 30px auto; display: block; }
         #main-nav { flex-grow: 1; overflow-y: auto; margin-bottom: 20px; }
         #main-nav ul { list-style-type: none; padding: 0; margin: 0; }
-        #main-nav li a { display: block; padding: 15px 20px; color: #e0e0e0; text-decoration: none; border-radius: 8px; margin-bottom: 5px; font-weight: 500; transition: all 0.2s ease; cursor: pointer; position: relative; }
-        #main-nav li a:hover { background-color: rgba(255, 255, 255, 0.1); color: white; transform: translateY(-2px); }
-        #main-nav li a.active { background-color: #ffffff; color: #0b1a2a; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transform: translateY(-2px); }
-        
-        .content-area { flex-grow: 1; padding: 40px; overflow-y: auto; background-color: #f4f7fa; position: relative; z-index: 5; }
+        #main-nav li a { display: block; padding: 15px 20px; color: #e0e0e0; text-decoration: none; border-radius: 8px; margin-bottom: 5px; font-weight: 500; transition: all 0.2s ease; cursor: pointer; position: relative; background-color: transparent; }
+        #main-nav li a:hover { background-color: rgba(255, 255, 255, 0.1); color: white; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        #main-nav li a.active { background-color: #ffffff; color: #1e3a5f; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transform: translateY(-2px); }
+        .content-area { flex-grow: 1; padding: 40px; overflow-y: auto; background-color: #f4f7fa; transition: padding-left 0.3s ease-in-out; position: relative; }
         .content-area.fullscreen { padding: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         .content-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;}
         .content-header h1 { font-size: 2.2rem; color: #1e3a5f; margin: 0; }
-        
+        .content-header p { font-size: 1.1rem; color: #5a718c; margin: 0; }
         .btn-primary { background-color: #007bff; color: white; padding: 10px 20px; border-radius: 6px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
-        #btn-adicionar-contrato { width: 100%; padding: 15px; background-color: #28a745; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; }
-
-        /* DASHBOARD CARDS */
-        .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
-        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; text-align: center; }
-        .metric-card { background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #dbe3f0; box-shadow: 0 4px 12px rgba(0,20,60,0.05); }
-        .metric-card .value { font-size: 2.2rem; font-weight: 700; color: #007bff; }
-        .progress-bar-container { background-color: #e9ecef; border-radius: 8px; height: 25px; margin-bottom: 15px; overflow: hidden; }
-        .progress-bar-fill { background-color: #28a745; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; transition: width 0.5s ease-in-out; }
-        
-        /* TABELAS */
+        .btn-primary:hover { background-color: #0069d9; }
+        .btn-secondary { background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 6px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+        .btn-secondary:hover { background-color: #5a6268; }
+        .sidebar-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); flex-shrink: 0; }
+        #btn-adicionar-contrato { width: 100%; padding: 15px; background-color: #4caf50; color: white; border: none; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; }
+        #btn-adicionar-contrato:hover { background-color: #45a049; }
+        .danger-zone { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
+        .danger-zone h3 { color: #c82333; }
+        #btn-excluir-contrato { background-color: #c82333; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background-color 0.2s ease; }
+        #btn-excluir-contrato:hover { background-color: #a51c29; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background-color: #fff; width: 90%; max-width: 700px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: 90vh; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; border-bottom: 1px solid #e5e5e5; }
+        .modal-header h2 { margin: 0; color: #1e3a5f; }
+        .close-button { border: none; background: none; font-size: 2.5rem; cursor: pointer; color: #aaa; line-height: 1; padding: 0; }
+        .close-button:hover { color: #333; }
+        .modal-body { padding: 25px; overflow-y: auto; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; font-family: 'Poppins', sans-serif; }
+        .form-group input:read-only, .form-group textarea:read-only, input:read-only { background-color: #e9ecef; opacity: 1; cursor: not-allowed; }
+        textarea { resize: vertical; min-height: 80px; }
+        fieldset { border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-top: 20px; grid-column: 1 / -1; }
+        legend { font-weight: 600; color: #1e3a5f; padding: 0 10px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px; border-top: 1px solid #e5e5e5; background-color: #f9f9f9; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+        .cs-controls { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; background-color: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-wrap: wrap; }
+        .cs-controls input, .cs-controls select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
         .cs-table-wrapper { overflow-x: auto; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .cs-table { width: 100%; border-collapse: collapse; min-width: 800px; }
         .cs-table th, .cs-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; }
-        .cs-table th { background-color: #f8faff; color: #1e3a5f; font-weight: 600; }
+        .cs-table th { font-weight: 600; color: #1e3a5f; background-color: #f8faff; white-space: nowrap; }
+        .cs-table tr:last-child td { border-bottom: none; }
+        .cs-table tr:hover { background-color: #f4f7fa; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; color: white; font-weight: 600; font-size: 0.8rem; text-align: center; }
+        .status-badge.pendente { background-color: #ffc107; color: #333; }
+        .status-badge.respondido { background-color: #28a745; }
+        .status-badge.atrasado { background-color: #dc3545; }
+        .prazo-atencao { color: #ff9800; font-weight: 700; }
+        .prazo-vencido { color: #dc3545; font-weight: 700; }
+        .actions-cell { display: flex; gap: 10px; }
+        .actions-cell button { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 5px; }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; text-align: center; }
+        .metric-card { background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #dbe3f0; box-shadow: 0 4px 12px rgba(0,20,60,0.05); }
+        .metric-card .label { font-size: 0.9rem; color: #5a718c; margin-bottom: 8px; }
+        .metric-card .value { font-size: 2.2rem; font-weight: 700; color: #007bff; }
+        .metric-card .value.goal { color: #28a745; }
+        .progress-card { text-align: left; }
+        .input-area { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
+        .progress-card label { font-weight: 600; color: #1e3a5f; white-space: nowrap; margin-right: 10px;}
+        .input-wrapper { position: relative; flex-grow: 1; }
+        .input-wrapper .currency-symbol { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #5a718c; font-weight: 600; }
+        .progress-card input { width: 100%; padding: 10px 10px 10px 35px; font-size: 1rem; font-family: 'Poppins', sans-serif; border: 2px solid #cdd7e5; border-radius: 8px; outline: none; transition: all 0.2s; }
+        input.no-symbol { padding: 10px 15px !important; }
+        input:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); }
+        .progress-bar-container { background-color: #e9ecef; border-radius: 8px; height: 25px; margin-bottom: 15px; overflow: hidden; }
+        .progress-bar-fill { background-color: #28a745; height: 100%; width: 0%; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem; transition: width 0.5s ease-in-out; }
+        .progress-details { display: flex; justify-content: space-between; font-size: 0.9rem; color: #5a718c; }
+        .progress-details span { font-weight: 600; color: #333; }
+        .goal-surpassed { color: #28a745; font-weight: 700; }
+        .progress-bar-sewage { height: 35px; border-radius: 17px; background-color: #e9ecef; margin-bottom: 15px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: flex-start; }
+        .progress-bar-sewage::before { content: '🏠'; font-size: 1.8rem; position: absolute; left: 5px; top: 50%; transform: translateY(-50%); z-index: 2; }
+        .progress-bar-sewage::after { content: '🏭'; font-size: 1.8rem; position: absolute; right: 5px; top: 50%; transform: translateY(-50%); z-index: 2; }
+        .progress-bar-fill-sewage { height: 100%; background-color: #007bff; border-radius: 17px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem; transition: width 0.5s ease-in-out; }
+        .slideshow-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; position: relative; }
+        .content-area.fullscreen .slideshow-wrapper { justify-content: center; }
+        .slideshow-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid #e0e0e0; }
+        .content-area.fullscreen .slideshow-header { display: none; }
+        .slideshow-header h1 { margin: 0; font-size: 2.2rem; color: #1e3a5f; }
+        .fullscreen-button { background: none; border: none; font-size: 1.8rem; cursor: pointer; color: #5a718c; padding: 0; line-height: 1; transition: color 0.2s ease; }
+        .fullscreen-button:hover { color: #1e3a5f; }
+        .exit-fullscreen-button { display: none; position: absolute; top: 20px; right: 20px; background-color: rgba(0,0,0,0.6); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; z-index: 1001; font-size: 1rem; }
+        .content-area.fullscreen .exit-fullscreen-button { display: block; }
+        .slideshow-content { flex-grow: 1; display: grid; position: relative; max-width: 1200px; width: 100%; margin: 0 auto; }
+        .content-area.fullscreen .slideshow-content { height: 100%; max-height: 90vh; display: grid; align-content: center; }
+        .panel-slide {
+            grid-column-start: 1; grid-row-start: 1; opacity: 0; visibility: hidden;
+            transition: opacity 0.7s ease-in-out, visibility 0.7s;
+            background-color: white; border-radius: 12px; padding: 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; gap: 25px; width: 100%;
+        }
+        .panel-slide.active { opacity: 1; visibility: visible; }
+        .panel-slide h2 { font-size: 2rem; color: #1e3a5f; margin: 0 0 20px 0; text-align: center; }
+        .panel-slide .progress-bar-container { height: 40px; border-radius: 20px; margin-bottom: 20px; }
+        .panel-slide .progress-bar-fill, .panel-slide .progress-bar-fill-sewage { border-radius: 20px; font-size: 1.1rem; font-weight: 700; }
+        .panel-slide .progress-details { font-size: 1.1rem; font-weight: 500; color: #5a718c; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .panel-slide .progress-details div { padding: 10px 0; border-radius: 8px; background-color: #f8fafd; text-align: center; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
+        .panel-slide .progress-details span { font-weight: 700; color: #1e3a5f; display: block; font-size: 1.4rem; }
+        .panel-slide .progress-details div .goal-surpassed { color: #28a745 !important; }
+        .panel-slide .progress-details div:first-child span { color: #c82333; }
+        .panel-slide .progress-details div:nth-child(2) span { color: #007bff; }
+        .panel-slide .progress-details div:nth-child(3) span { color: #28a745; }
+        .panel-slide .progress-details div:nth-child(4) span { color: #6f42c1; }
+        .calendars { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; padding: 10px; background: #f8fafd; border-radius: 8px;}
+        #calendars-avance { max-height: 400px; overflow-y: auto; }
+        .month { background-color: #fff; border-radius: 10px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .month h3 { text-align: center; font-size: 1.3rem; color: #1e3a5f; margin-bottom: 15px; }
+        .calendar-grid { display: grid; grid-template-columns: 30px repeat(7, 1fr); gap: 5px; }
+        .day-name { font-weight: 600; color: #5a718c; font-size: 0.85rem; text-align: center; padding: 8px 0; }
+        .week-number-header { grid-column: 1; }
+        .week-number { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; color: #6f42c1; background-color: #f4f1fa; border-radius: 6px; }
+        .day { border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 45px; position: relative; }
+        .day-of-month { font-size: 0.7rem; color: #6c757d; }
+        .day.weekend { background-color: #f1f3f5; }
+        .day.past-day { background-color: #e9ecef; color: #ced4da; text-decoration: line-through; font-weight: 600; }
+        .day.today { background-color: #fff3cd; border: 2px solid #ffeeba; }
+        .day.end-date { background-color: #007bff; color: white; }
+        .day.end-date::after { content: '🎯'; position: absolute; top: -5px; right: -5px; font-size: 1rem; }
+        .empty-day { visibility: hidden; }
+        .day.future-workday { background-color: #eaf6ff; }
+        .day.holiday { background-color: #fdeaea; }
 
-        /* PAINEL TV / SLIDESHOW */
-        .panel-slide { display: none; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); flex-direction: column; width: 100%; }
-        .panel-slide.active { display: flex; }
-        
-        /* REGRAS DO MODAL */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal.active { display: flex; }
-        .modal-content { background: white; width: 90%; max-width: 700px; border-radius: 12px; padding: 20px; max-height: 90vh; overflow-y: auto; }
+        .sidebar-toggle {
+            display: none; 
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 999;
+            width: 40px;
+            height: 40px;
+            background: #1e3a5f;
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .sidebar-toggle span {
+            display: block;
+            width: 100%;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+        .sidebar.is-open + .sidebar-toggle span:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+        .sidebar.is-open + .sidebar-toggle span:nth-child(2) {
+            opacity: 0;
+        }
+        .sidebar.is-open + .sidebar-toggle span:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 997;
+        }
+        .sidebar-overlay.is-open {
+            display: block;
+        }
+
+        /* [NOVA ALTERAÇÃO] Aumentando o breakpoint para 992px */
+        @media (max-width: 992px) {
+            body, html {
+                overflow-y: auto; 
+                overflow-x: hidden;
+            }
+            .sidebar-toggle {
+                display: flex; 
+            }
+            .system-container {
+                flex-direction: column; 
+            }
+            .sidebar {
+                position: fixed; 
+                left: -300px; 
+                width: 280px; 
+                height: 100vh;
+                z-index: 998;
+                transition: left 0.3s ease-in-out;
+                box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+            }
+            .sidebar.is-open {
+                left: 0; 
+            }
+            .sidebar.hidden {
+                left: -300px !important;
+                width: 0;
+            }
+            .content-area {
+                padding: 20px;
+                padding-top: 70px; 
+            }
+            .content-header h1 {
+                font-size: 1.8rem;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-group.full-width {
+                grid-column: 1 / 1; 
+            }
+            fieldset {
+                 grid-column: 1 / 1; 
+            }
+            .metrics {
+                grid-template-columns: 1fr; 
+            }
+            .panel-slide {
+                padding: 20px;
+            }
+            .panel-slide .progress-details {
+                grid-template-columns: 1fr; 
+                gap: 10px;
+            }
+            .panel-slide h2 {
+                font-size: 1.5rem; 
+            }
+        }
     </style>
 </head>
 <body>
 
+    <button id="sidebar-toggle-btn" class="sidebar-toggle" aria-label="Abrir menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
     <div class="system-container">
         <aside class="sidebar">
-            <header class="sidebar-header"><img src="imagem2.png" alt="Logo" class="company-logo"></header>
+            <header class="sidebar-header"><img src="imagem2.png" alt="Logo da Empresa" class="company-logo"></header>
             <nav id="main-nav"><ul></ul></nav>
-            <div class="sidebar-footer"><button id="btn-adicionar-contrato">+ Novo Contrato</button></div>
+            <div class="sidebar-footer"><button id="btn-adicionar-contrato">+ Adicionar Novo Contrato</button></div>
         </aside>
         <main id="content-area" class="content-area">
             <div class="welcome-message"><h1>Carregando...</h1><p>Buscando dados mais recentes.</p></div>
         </main>
     </div>
 
+    <div id="modal-novo-contrato" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Adicionar Novo Contrato</h2>
+                <button class="close-button">&times;</button>
+            </div>
+            <form id="form-novo-contrato">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group"><label for="nome-curto">Nome Curto (Menu):</label><input type="text" id="nome-curto" required></div>
+                        <div class="form-group"><label for="nome-completo">Nome Completo (Título):</label><input type="text" id="nome-completo" required></div>
+                        <fieldset>
+                            <legend>Metas</legend>
+                            <div class="form-grid">
+                                <div class="form-group"><label for="meta-imob">Meta Imobilização (R$):</label><input type="number" id="meta-imob" step="0.01" min="0"></div>
+                                <div class="form-group"><label for="meta-econ">Meta Economias:</label><input type="number" id="meta-econ" min="0"></div>
+                                <div class="form-group"><label for="meta-avance">Meta Avanço Físico (m):</label><input type="number" id="meta-avance" min="0"></div>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-button">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar Contrato</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="modal-comuniquese" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-cs-title">Novo Comunique-se</h2>
+                <button class="close-button">&times;</button>
+            </div>
+            <form id="form-comuniquese">
+                <input type="hidden" id="cs-id">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group"><label for="cs-protocolo">Protocolo:</label><input type="text" id="cs-protocolo" required></div>
+                        <div class="form-group"><label for="cs-orgao">Órgão Emissor:</label><input type="text" id="cs-orgao" required></div>
+                        <div class="form-group"><label for="cs-data-recebimento">Data Recebimento:</label><input type="date" id="cs-data-recebimento" required></div>
+                        <div class="form-group"><label for="cs-prazo-dias">Prazo (Dias):</label><input type="number" id="cs-prazo-dias" min="1" required></div>
+                        <div class="form-group full-width"><label for="cs-assunto">Assunto:</label><textarea id="cs-assunto" rows="2"></textarea></div>
+                        <div class="form-group"><label for="cs-responsavel">Responsável:</label><input type="text" id="cs-responsavel"></div>
+                        <div class="form-group"><label for="cs-status">Status:</label><select id="cs-status"><option value="Pendente">Pendente</option><option value="Respondido">Respondido</option></select></div>
+                        <div class="form-group"><label for="cs-data-resposta">Data Resposta:</label><input type="date" id="cs-data-resposta"></div>
+                        <div class="form-group"><label for="cs-oficio-resposta">Ofício Resposta:</label><input type="text" id="cs-oficio-resposta"></div>
+                        <div class="form-group full-width"><label for="cs-observacao">Observação:</label><textarea id="cs-observacao" rows="3"></textarea></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-button">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+    // ======================================================================================================
+    // SCRIPT COMPLETO (v12 - Removido "Casas" + Responsivo + Modo de Edição + "Economias" nas metas)
+    // ======================================================================================================
+    /**
+    * @author ERIVANDRO JUNIOR
+    */
+
+    let isAdmin = false;
+
     document.addEventListener('DOMContentLoaded', () => {
+
         const urlParams = new URLSearchParams(window.location.search);
-        const isAdmin = urlParams.get('modo') === 'edicao'; 
+        isAdmin = urlParams.get('modo') === 'edicao'; 
+
         const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/68e8e81ad0ea881f409c51f0'; 
         const API_KEY = '$2a$10$L4n/qlQ8LGkgQmd9p7zhaOAK6j5pgA.2Tq7xK019hUqDGNfPmqJ5O'; 
 
         let database = { obras: [], comuniqueses: [] };
+        let slideshowInterval = null;
+        let currentSlide = 0;
+        let slides = [];
         const navList = document.querySelector('#main-nav ul');
         const contentArea = document.getElementById('content-area');
+        const sidebar = document.querySelector('.sidebar');
         
         const formatCurrency = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const formatUnits = (v, u = '') => `${(Math.round(v) || 0).toLocaleString('pt-BR')} ${u}`.trim();
+        const formatAsCompactCurrency = (v) => (v >= 1e6 ? `R$ ${(v / 1e6).toFixed(1).replace('.', ',')} mi` : (v >= 1e3 ? `R$ ${(v / 1e3).toFixed(1).replace('.', ',')} mil` : formatCurrency(v)));
+        const calculatePercentage = (c, g) => (g > 0 ? (c / g) * 100 : 0);
+        const formatarValorFaltante = (m, a, t, u = '', d = 1) => { const diff = m - a; if (diff <= 0) { const s = Math.abs(diff); let vf; if (t === 'currency') vf = formatCurrency(s); else vf = formatUnits(s / d, u); return `Superamos a meta em <span class="goal-surpassed">${vf}</span>`; } else { let vf; if (t === 'currency') vf = formatCurrency(diff); else vf = formatUnits(diff / d, u); return `Faltam: <span>${vf}</span>`; } };
+        function getBusinessDaysBetween(startDate, endDate, holidays) { let count = 0; const curDate = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate())); const lastDate = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate())); const holidaySet = new Set(holidays); while (curDate <= lastDate) { const dayOfWeek = curDate.getUTCDay(); const isoDate = curDate.toISOString().split('T')[0]; if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidaySet.has(isoDate)) { count++; } curDate.setUTCDate(curDate.getUTCDate() + 1); } return count; }
+
+        function gerarNavegacao(obras) { 
+            const activeId = navList.querySelector('a.active')?.dataset.id || 'painel-tv'; 
+            navList.innerHTML = ''; 
+            navList.innerHTML += `<li><a data-id="painel-tv" title="Painel TV">📺 Painel TV</a></li>`; 
+            navList.innerHTML += `<li><a data-id="visao-geral">Visão Geral</a></li>`; 
+            navList.innerHTML += `<li><a data-id="comuniqueses">📄 Comunique-se</a></li>`; 
+            
+            // [NOVA ALTERAÇÃO] Adicionando a página de visualização do histórico
+            navList.innerHTML += `<li><a data-id="metas-acumuladas">📊 Metas Acumuladas</a></li>`;
+
+            // [ALTERAÇÃO EXISTENTE] Adiciona o botão de Lançar Histórico (somente para admin)
+            if (isAdmin) {
+                // Usamos uma cor diferente para destacar que é uma ferramenta de admin
+                navList.innerHTML += `<li><a data-id="lancar-historico" style="color: #ffc107; font-weight: 600;">🛠️ Lançar Histórico</a></li>`;
+            }
+
+            obras.sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto)).forEach(o => { navList.innerHTML += `<li><a data-id="${o.id}">${o.nomeCurto}</a></li>`; }); 
+            const linkAtivo = navList.querySelector(`a[data-id="${activeId}"]`) || navList.querySelector('a'); 
+            if (linkAtivo) linkAtivo.classList.add('active'); 
+            navList.querySelectorAll('a').forEach(l => l.addEventListener('click', handleNavClick)); 
+        }
+        
+        function mostrarVisaoGeral(obras) { 
+            const tImobM = obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0), tImobA = obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0), tEconM = obras.reduce((s, o) => s + o.dadosEconomia.meta, 0), tEconA = obras.reduce((s, o) => s + o.dadosEconomia.atual, 0), tAvanceM = obras.reduce((s, o) => s + o.dadosAvanceFisico.meta, 0), tAvanceA = obras.reduce((s, o) => s + o.dadosAvanceFisico.atual, 0); 
+            const pImob = calculatePercentage(tImobA, tImobM), pEcon = calculatePercentage(tEconA, tEconM), pAvance = calculatePercentage(tAvanceA, tAvanceM); 
+            
+            // [NOVA ALTERAÇÃO] Contagem de contratos visíveis (excluindo o "fantasma")
+            const contagemContratosVisiveis = obras.filter(o => o.nomeCurto !== 'Varzeas A').length;
+
+            contentArea.innerHTML = `<div class="content-header"><div><h1>Visão Geral do Projeto</h1><p>Resumo de todos os contratos.</p></div></div><div class="dashboard-grid"><section class="metrics"><figure class="metric-card"><figcaption class="label">Contratos Ativos</figcaption><div class="value">${contagemContratosVisiveis}</div></figure><figure class="metric-card"><figcaption class="label">Imobilização Total</figcaption><div class="value goal">${formatAsCompactCurrency(tImobM)}</div></figure><figure class="metric-card"><figcaption class="label">Economias Totais</figcaption><div class="value goal">${formatUnits(tEconM)}</div></figure><figure class="metric-card"><figcaption class="label">Extensão Total</figcaption><div class="value goal">${formatUnits(tAvanceM / 1e3, 'km')}</div></figure></section><section class="metric-card progress-card"><h3>Progresso: Imobilização</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pImob > 100 ? 100 : pImob.toFixed(2)}%;">${pImob.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tImobM, tImobA, 'currency')}</div><div>Executado: <span>${formatCurrency(tImobA)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Economias</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pEcon > 100 ? 100 : pEcon.toFixed(2)}%;background-color:#ff9800;">${pEcon.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tEconM, tEconA, 'units', 'economias')}</div><div>Alcançado: <span>${formatUnits(tEconA)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Avanço Físico</h3><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pAvance > 100 ? 100 : pAvance.toFixed(2)}%;">${pAvance.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tAvanceM, tAvanceA, 'units', 'km', 1e3)}</div><div>Executado: <span>${formatUnits(tAvanceA / 1e3, 'km')}</span></div></div></section></div>`; 
+        }
+        
+        function mostrarPaginaObra(o) {
+            const pI = calculatePercentage(o.dadosImobilizacao.atual, o.dadosImobilizacao.meta), pE = calculatePercentage(o.dadosEconomia.atual, o.dadosEconomia.meta), pA = calculatePercentage(o.dadosAvanceFisico.atual, o.dadosAvanceFisico.meta);
+            const vIf = (o.dadosImobilizacao.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            const readOnlyState = !isAdmin ? 'readonly' : '';
+            const adminOnlyDisplay = !isAdmin ? 'style="display:none;"' : '';
+            
+            contentArea.innerHTML = `
+            <div class="content-header"><div><h1>${o.nomeCompleto}</h1><p>Acompanhamento detalhado.</p></div></div>
+            <div class="dashboard-grid">
+                <section class="metric-card progress-card">
+                    <h3>Imobilização Financeira</h3>
+                    <div class="input-area">
+                        <label for="input-imob">Valor Realizado:</label>
+                        <div class="input-wrapper"><span class="currency-symbol">R$</span><input type="text" id="input-imob" data-obra-id="${o.id}" data-tipo="imobilizacao" value="${vIf}" ${readOnlyState}></div>
+                    </div>
+                    <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div>
+                    <div class="progress-details">
+                        <div>${formatarValorFaltante(o.dadosImobilizacao.meta, o.dadosImobilizacao.atual, 'currency')}</div>
+                        <div>Meta: <span>${formatCurrency(o.dadosImobilizacao.meta)}</span></div>
+                    </div>
+                </section>
+                <section class="metric-card progress-card">
+                    <h3>Economias</h3>
+                    <div class="input-area">
+                        <label for="input-econ">Economias Atendidas:</label>
+                        <div class="input-wrapper"><input type="text" id="input-econ" class="no-symbol" data-obra-id="${o.id}" data-tipo="economia" value="${(o.dadosEconomia.atual || 0).toLocaleString('pt-BR')}" ${readOnlyState}></div>
+                    </div>
+                    <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div>
+                    <div class="progress-details">
+                        <div>${formatarValorFaltante(o.dadosEconomia.meta, o.dadosEconomia.atual, 'units', 'economias')}</div>
+                        <div>Meta: <span>${formatUnits(o.dadosEconomia.meta)}</span></div>
+                    </div>
+                </section>
+                <section class="metric-card progress-card">
+                    <h3>Avanço Físico (m)</h3>
+                    <div class="input-area">
+                        <label for="input-avance">Metros Executados:</label>
+                        <div class="input-wrapper"><input type="text" id="input-avance" class="no-symbol" data-obra-id="${o.id}" data-tipo="avance" value="${(o.dadosAvanceFisico.atual || 0).toLocaleString('pt-BR')}" ${readOnlyState}></div>
+                    </div>
+                    <div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div>
+                    <div class="progress-details">
+                        <div>${formatarValorFaltante(o.dadosAvanceFisico.meta, o.dadosAvanceFisico.atual, 'units', 'm')}</div>
+                        <div>Meta: <span>${formatUnits(o.dadosAvanceFisico.meta, 'm')}</span></div>
+                    </div>
+                </section>
+                <section class="metric-card danger-zone" ${adminOnlyDisplay}>
+                    <h3>Zona de Perigo</h3>
+                    <p>A exclusão de um contrato é permanente.</p>
+                    <button id="btn-excluir-contrato" data-obra-id="${o.id}">Excluir Contrato</button>
+                </section>
+            </div>`;
+            
+            if (isAdmin) {
+                contentArea.querySelectorAll('input[type="text"]').forEach(i => {
+                    i.addEventListener('input', handleInputFormatting);
+                    i.addEventListener('change', handleInputChange);
+                });
+                const btnExcluir = document.getElementById('btn-excluir-contrato');
+                if (btnExcluir) {
+                    btnExcluir.addEventListener('click', handleExcluirClick);
+                }
+            }
+        }
+        
+        const handlePainelTVKeyPress = (event) => { if (event.key === 'ArrowRight') proximoSlide(); if (event.key === 'ArrowLeft') slideAnterior(); };
+        function proximoSlide() { if (slides.length === 0) return; slides[currentSlide].classList.remove('active'); currentSlide = (currentSlide + 1) % slides.length; slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); }
+        function slideAnterior() { if (slides.length === 0) return; slides[currentSlide].classList.remove('active'); currentSlide = (currentSlide - 1 + slides.length) % slides.length; slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); }
+        function reiniciarTimerSlideshow() { clearInterval(slideshowInterval); slideshowInterval = setInterval(proximoSlide, 10000); }
+        
+        function mostrarPainelTV() { 
+            const eI = new Date(Date.UTC(2025, 11, 15)), eE = new Date(Date.UTC(2025, 11, 31)), eA = new Date(Date.UTC(2026, 11, 31)); 
+            const localToday = new Date(); 
+            const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); 
+            const H = ['2025-10-12', '2025-11-02', '2025-11-15', '2025-12-25', '2026-01-01', '2026-04-03', '2026-04-21', '2026-05-01', '2026-06-04', '2026-09-07', '2026-10-12', '2026-11-02', '2026-11-15', '2026-12-25']; 
+            const tI = database.obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0), aI = database.obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0), tE = database.obras.reduce((s, o) => s + o.dadosEconomia.meta, 0), aE = database.obras.reduce((s, o) => s + o.dadosEconomia.atual, 0), tA = database.obras.reduce((s, o) => s + o.dadosAvanceFisico.meta, 0), aA = database.obras.reduce((s, o) => s + o.dadosAvanceFisico.atual, 0); 
+            const bDI = getBusinessDaysBetween(today, eI, H), bDE = getBusinessDaysBetween(today, eE, H), bDA = getBusinessDaysBetween(today, eA, H); 
+            const dIT = bDI > 0 ? (tI - aI) / bDI : 0, dET = bDE > 0 ? (tE - aE) / bDE : 0, dAT = bDA > 0 ? (tA - aA) / bDA : 0; 
+            const pI = calculatePercentage(aI, tI), pE = calculatePercentage(aE, tE), pA = calculatePercentage(aA, tA); 
+            contentArea.innerHTML = `<div class="slideshow-wrapper"><div class="slideshow-header"><h1>Painel TV</h1><button class="fullscreen-button" title="Modo Tela Cheia">📺</button></div><div class="slideshow-content"></div><button class="exit-fullscreen-button">Sair</button></div>`; 
+            const sC = contentArea.querySelector('.slideshow-content'); 
+            
+            sC.innerHTML = `<div class="panel-slide"><h2>Meta de Imobilização</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tI, aI, 'currency')}</div><div>Executado: <span>${formatCurrency(aI)}</span></div><div>Meta Diária: <span>${formatCurrency(dIT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-imob"></div></div>` 
+                            + `<div class="panel-slide"><h2>Meta de Economias</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tE, aE, 'units', 'economias')}</div><div>Alcançado: <span>${formatUnits(aE)}</span></div><div>Meta Diária: <span>${formatUnits(dET)}</span></div><div>Dias Úteis: <span>${bDE}</span></div></div><div class="calendars" id="calendars-econ"></div></div>` 
+                            + `<div class="panel-slide"><h2>Avanço Físico</h2><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tA, aA, 'units', 'm')}</div><div>Executado: <span>${formatUnits(aA, 'm')}</span></div><div>Meta Diária: <span>${formatUnits(dAT, 'm')}</span></div><div>Dias Úteis: <span>${bDA}</span></div></div><div class="calendars" id="calendars-avance"></div></div>`; 
+                            
+            const { renderAllCalendars } = setupCalendarLogic(H); 
+            renderAllCalendars(today, eI, sC.querySelector('#calendars-imob')); 
+            renderAllCalendars(today, eE, sC.querySelector('#calendars-econ')); 
+            renderAllCalendars(today, eA, sC.querySelector('#calendars-avance')); 
+            slides = sC.querySelectorAll('.panel-slide'); 
+            currentSlide = 0; 
+            if (slides.length > 0) { slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); } 
+            document.querySelector('.fullscreen-button').addEventListener('click', enterFullScreenMode); 
+            document.querySelector('.exit-fullscreen-button').addEventListener('click', exitFullScreenMode); 
+            document.addEventListener('keydown', handlePainelTVKeyPress); 
+        }
+
+        function setupCalendarLogic(h) { const holidaySet = new Set(h); function rM(y, m, gC, tED) { const localToday = new Date(); const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const fD = new Date(y, m, 1), dIM = new Date(y, m + 1, 0).getDate(), sDOW = fD.getDay(); let gCs = []; gCs.push('<div class="week-number-header"></div>'); ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].forEach(n => gCs.push(`<div class="day-name">${n}</div>`)); for (let i = 0; i < sDOW; i++) gCs.push('<div class="empty-day"></div>'); for (let d = 1; d <= dIM; d++) { const cD = new Date(Date.UTC(y, m, d)); const cDOW = cD.getUTCDay(); if (cDOW === 0) gCs.push(`<div class="week-number">${gWN(cD)}</div>`); let cls = ['day']; if (cD.getTime() === today.getTime()) { cls.push('today'); } else if (cD < today) { cls.push('past-day'); } if (cD.getTime() === tED.getTime()) { cls.push('end-date'); } else if (cD > today && cD <= tED) { const iso = cD.toISOString().split('T')[0]; if (holidaySet.has(iso)) cls.push('holiday'); else if (cDOW === 0 || cDOW === 6) cls.push('weekend'); else cls.push('future-workday'); } gCs.push(`<div class="${cls.join(' ')}"><span class="day-of-month">${d}</span></div>`); } gC.innerHTML = gCs.join(''); } function gWN(d) { d = new Date(d); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); const yS = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); const wN = Math.ceil((((d - yS) / 864e5) + 1) / 7); return wN; } return { renderAllCalendars: function (s, e, c) { if (!c) return; c.innerHTML = ''; const mN = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]; let cD = new Date(s.getUTCFullYear(), s.getUTCMonth(), 1); while (cD <= e) { const y = cD.getFullYear(), m = cD.getMonth(); const mC = document.createElement('div'); mC.className = 'month'; mC.innerHTML = `<h3>${mN[m]} ${y}</h3><div class="calendar-grid"></div>`; const cG = mC.querySelector('.calendar-grid'); rM(y, m, cG, e); c.appendChild(mC); cD.setMonth(cD.getMonth() + 1); } } }; }
+        
+        function mostrarPaginaComuniqueses() {
+            const cs = database.comuniqueses || [];
+            const adminButton = isAdmin ? '<button id="btn-novo-cs" class="btn-primary">+ Novo Comunique-se</button>' : '';
+            const adminHeader = isAdmin ? '<th>Ações</th>' : '';
+            contentArea.innerHTML = `
+            <div class="content-header">
+                <div><h1>Controle de "Comunique-se"</h1><p>Gestão de prazos e respostas.</p></div>
+                ${adminButton}
+            </div>
+            <div class="cs-controls">
+                <input type="text" id="cs-search" placeholder="Buscar...">
+                <select id="cs-filter-status">
+                    <option value="todos">Todos</option>
+                    <option value="pendente">Pendentes</option>
+                    <option value="atrasado">Atrasados</option>
+                    <option value="respondido">Respondidos</option>
+                </select>
+            </div>
+            <div class="cs-table-wrapper">
+                <table class="cs-table">
+                    <thead>
+                        <tr>
+                            <th>Protocolo</th>
+                            <th>Órgão</th>
+                            <th>Recebimento</th>
+                            <th>Data Limite</th>
+                            <th>Status</th>
+                            <th>Responsável</th>
+                            ${adminHeader}
+                        </tr>
+                    </thead>
+                    <tbody id="cs-table-body"></tbody>
+                </table>
+            </div>`;
+            renderarTabelaCS(cs);
+            if (isAdmin) {
+                document.getElementById('btn-novo-cs').addEventListener('click', () => abrirModalCS());
+            }
+            document.getElementById('cs-search').addEventListener('input', filtrarTabelaCS);
+            document.getElementById('cs-filter-status').addEventListener('change', filtrarTabelaCS);
+        }
+        
+        function renderarTabelaCS(cs) {
+            const tB = document.getElementById('cs-table-body');
+            if (!cs || cs.length === 0) {
+                tB.innerHTML = `<tr><td colspan="${isAdmin ? 7 : 6}" style="text-align:center;">Nenhum registro.</td></tr>`;
+                return;
+            }
+            tB.innerHTML = cs.map(c => {
+                const { sC, sT, pC } = calcularStatusPrazo(c.dataLimite, c.status);
+                const actionsCell = isAdmin ? `<td class="actions-cell"><button title="Editar" data-id="${c.id}" class="edit-cs-btn">✏️</button></td>` : '';
+                return `
+                    <tr>
+                        <td>${c.protocolo}</td>
+                        <td>${c.orgaoEmissor}</td>
+                        <td>${new Date(c.dataRecebimento + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
+                        <td class="${pC}">${new Date(c.dataLimite + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
+                        <td><span class="status-badge ${sC}">${sT}</span></td>
+                        <td>${c.responsavel || 'N/D'}</td>
+                        ${actionsCell}
+                    </tr>
+                `;
+            }).join('');
+            
+            if (isAdmin) {
+                document.querySelectorAll('.edit-cs-btn').forEach(b => b.addEventListener('click', e => {
+                    const id = e.currentTarget.dataset.id;
+                    abrirModalCS(id);
+                }));
+            }
+        }
+        function calcularStatusPrazo(dL, s) { if (s === 'Respondido') return { sC: 'respondido', sT: 'Respondido', pC: '' }; const localToday = new Date(); const hoje = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const p = new Date(dL + 'T00:00:00'); const dD = (p - hoje) / 864e5; if (dD < 0) return { sC: 'atrasado', sT: 'Atrasado', pC: 'prazo-vencido' }; if (dD <= 7) return { sC: 'pendente', sT: 'Pendente', pC: 'prazo-atencao' }; return { sC: 'pendente', sT: 'Pendente', pC: '' }; }
+        function filtrarTabelaCS() { const tB = document.getElementById('cs-search').value.toLowerCase(), sF = document.getElementById('cs-filter-status').value; const cF = (database.comuniqueses || []).filter(c => { const sI = calcularStatusPrazo(c.dataLimite, c.status); const cS = (sF === 'todos') || (sF === sI.sT.toLowerCase()); const cB = (c.protocolo.toLowerCase().includes(tB) || c.orgaoEmissor.toLowerCase().includes(tB) || c.assunto.toLowerCase().includes(tB)); return cS && cB; }); renderarTabelaCS(cF); }
+        
+        // =========================================================================
+        // [FUNÇÕES DE HISTÓRICO]
+        // =========================================================================
+
+        /**
+         * @author ERIVANDRO JUNIOR
+         * [NOVA FUNÇÃO] Calcula o histórico agregado de todas as obras.
+         */
+        function calcularHistoricoAgregado(obras) {
+            const agregados = {
+                Imobilização: {},
+                Economia: {},
+                Avanço: {}
+            };
+
+            const tipos = [
+                { key: 'dadosImobilizacao', nome: 'Imobilização' },
+                { key: 'dadosEconomia', nome: 'Economia' },
+                { key: 'dadosAvanceFisico', nome: 'Avanço Físico' }
+            ];
+
+            // 1. Loop por todas as obras REAIS
+            for (const obra of obras) {
+                // 2. Loop pelos tipos (Imob, Econ, Avanço)
+                for (const tipo of tipos) {
+                    const hist = obra[tipo.key]?.historico; // ?. evita erro se 'historico' não existir
+                    if (hist && hist.length > 0) {
+                        // 3. Loop por cada entrada mensal (2025-03, 2025-04...)
+                        for (const item of hist) {
+                            const { mes, meta, realizado } = item;
+                            
+                            // Se o mês ainda não existe no agregado, cria
+                            if (!agregados[tipo.nome][mes]) {
+                                agregados[tipo.nome][mes] = { mes: mes, meta: 0, realizado: 0 };
+                            }
+                            
+                            // Soma os valores
+                            agregados[tipo.nome][mes].meta += meta || 0;
+                            agregados[tipo.nome][mes].realizado += realizado || 0;
+                        }
+                    }
+                }
+            }
+
+            // 4. Constrói o objeto "obra" FALSO para a Coordenação
+            const obraEml2 = {
+                id: 'coord-eml-2',
+                nomeCurto: 'Coordenação EML 2', // Nome para o sort
+                nomeCompleto: 'Coordenação EML 2', // Título do Card
+                dadosImobilizacao: {
+                    historico: Object.values(agregados.Imobilização) // Converte o mapa de volta para array
+                },
+                dadosEconomia: {
+                    historico: Object.values(agregados.Economia)
+                },
+                dadosAvanceFisico: {
+                    historico: Object.values(agregados.Avanço)
+                }
+            };
+            return obraEml2;
+        }
+
+        /**
+         * @author ERIVANDRO JUNIOR
+         * [FUNÇÃO MODIFICADA] Mostra a página "Metas Acumuladas" com agregação e sort
+         */
+        function mostrarMetasAcumuladas(obras) {
+            // [NOVA ALTERAÇÃO] Adicionando o botão de exportar
+            contentArea.innerHTML = `
+                <div class="content-header">
+                    <div><h1>Metas Acumuladas</h1><p>Histórico mensal de todos os contratos.</p></div>
+                    <button id="btn-export-csv" class="btn-primary" style="background-color: #28a745;">📊 Exportar CSV</button>
+                </div>
+                <div class="dashboard-grid" id="container-metas-acumuladas">
+                    </div>`;
+
+            const container = document.getElementById('container-metas-acumuladas');
+            if (!container) return;
+
+            // 1. Criar o card agregado "EML 2"
+            const obraEml2 = calcularHistoricoAgregado(obras);
+
+            // 2. Criar a lista completa (EML 2 + Contratos)
+            const todasAsObras = [obraEml2, ...obras];
+
+            // 3. Definir a ordem de sort personalizada
+            // Usamos os sufixos dos seus 'nomeCurto' (1B1, 1A2, 17A, etc.)
+            const ordemDosCards = [
+                "Coordenação EML 2", // Nome exato do card novo
+                "1B1",
+                "1A2",
+                "1B2",
+                "1A1",
+                "6A",
+                "17B",
+                "17A"
+            ];
+            
+            // Criar um "mapa" para a ordem (muito mais rápido para consultar)
+            const ordemMap = new Map(ordemDosCards.map((nome, index) => [nome, index]));
+
+            // Helper para pegar o índice de sort de uma obra
+            const getSortIndex = (obra) => {
+                if (obra.nomeCurto === "Coordenação EML 2") return 0; // O card novo é sempre o primeiro
+                
+                // Pega a última parte do 'nomeCurto' (ex: "Pacote 17A" -> "17A")
+                const sufixo = obra.nomeCurto.split(' ').pop(); 
+                
+                // Se o sufixo está no mapa, retorna seu índice. Senão, joga pro fim (Infinity).
+                return ordemMap.has(sufixo) ? ordemMap.get(sufixo) : Infinity;
+            };
+
+            // 4. Sortar a lista
+            const obrasOrdenadas = todasAsObras.sort((a, b) => {
+                const indexA = getSortIndex(a);
+                const indexB = getSortIndex(b);
+
+                // Se ambos não estão no mapa (ex: "Varzeas A"), sortar alfabeticamente
+                if (indexA === Infinity && indexB === Infinity) {
+                    return a.nomeCurto.localeCompare(b.nomeCurto);
+                }
+
+                // Caso contrário, sortar pelo índice da lista
+                return indexA - indexB;
+            });
+
+
+            if (obrasOrdenadas.length === 0) {
+                container.innerHTML = '<p>Nenhum contrato cadastrado.</p>';
+                return;
+            }
+
+            // 5. Renderizar os cards (agora na ordem certa)
+            for (const obra of obrasOrdenadas) {
+                const card = document.createElement('section');
+                card.className = 'metric-card progress-card'; // Reusando o estilo de card existente
+
+                // Pega o histórico de cada tipo. O "?." evita erro se 'historico' não existir.
+                const histImob = obra.dadosImobilizacao?.historico;
+                const histEcon = obra.dadosEconomia?.historico;
+                const histAvanc = obra.dadosAvanceFisico?.historico;
+
+                card.innerHTML = `
+                    <h3>${obra.nomeCompleto || obra.nomeCurto}</h3>
+                    
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Histórico de Imobilização (R$)</h4>
+                    ${renderizarHistoricoTabela(histImob, 'currency')}
+                    
+                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Histórico de Economias (Un.)</h4>
+                    ${renderizarHistoricoTabela(histEcon, 'units')}
+                    
+                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Histórico de Avanço Físico (m)</h4>
+                    ${renderizarHistoricoTabela(histAvanc, 'units')}
+                `;
+                container.appendChild(card);
+            }
+
+            // [NOVA ALTERAÇÃO] Adiciona o listener para o botão de exportar
+            // Passamos a lista 'obrasOrdenadas' que já está na ordem certa e com o card EML 2
+            document.getElementById('btn-export-csv').addEventListener('click', () => exportarParaCSV(obrasOrdenadas));
+        }
+
+        /**
+         * @author ERIVANDRO JUNIOR
+         * Helper que cria a tabela HTML para um histórico
+         */
+        function renderizarHistoricoTabela(historico, tipoValor) {
+            // Se não tem histórico, mostra uma mensagem simples
+            if (!historico || historico.length === 0) {
+                return '<p style="font-size: 0.9rem; color: #6c757d; margin: 0;">Nenhum histórico lançado para este item.</p>';
+            }
+
+            // Define a função de formatação (Moeda ou Unidade)
+            const formatFn = (tipoValor === 'currency') ? formatCurrency : formatUnits;
+            
+            // [ALTERAÇÃO EXISTENTE] Mudando a ordem de DESC para ASC (crescente)
+            const historicoOrdenado = [...historico].sort((a, b) => a.mes.localeCompare(b.mes));
+
+            // [NOVA ALTERAÇÃO] Inicializa os totais
+            let totalMeta = 0;
+            let totalRealizado = 0;
+
+            // Inicia a tabela
+            let tabelaHtml = `
+                <div class="cs-table-wrapper" style="max-height: 300px; overflow-y: auto;">
+                    <table class="cs-table" style="min-width: 0; white-space: nowrap;">
+                        <thead>
+                            <tr>
+                                <th>Mês/Ano</th>
+                                <th>Meta</th>
+                                <th>Realizado</th>
+                                <th>Diferença</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            // Cria uma linha <tr> para cada item do histórico
+            for (const item of historicoOrdenado) {
+                const meta = item.meta || 0;
+                const realizado = item.realizado || 0;
+                const diff = realizado - meta;
+
+                // [NOVA ALTERAÇÃO] Soma os totais
+                totalMeta += meta;
+                totalRealizado += realizado;
+                
+                // Define a cor da diferença (verde se positivo, vermelho se negativo)
+                let diffClass = '';
+                if (diff > 0) diffClass = 'goal-surpassed'; // Classe CSS verde
+                if (diff < 0) diffClass = 'prazo-vencido';  // Classe CSS vermelha
+
+                tabelaHtml += `
+                    <tr>
+                        <td>${item.mes.replace('-', '/')}</td>
+                        <td>${formatFn(meta)}</td>
+                        <td>${formatFn(realizado)}</td>
+                        <td style="font-weight: 600;" class="${diffClass}">${formatFn(diff)}</td>
+                    </tr>
+                `;
+            }
+
+            // [NOVA ALTERAÇÃO] Calcula os totais e a classe da diferença
+            const totalDiff = totalRealizado - totalMeta;
+            let diffClassTotal = '';
+            if (totalDiff > 0) diffClassTotal = 'goal-surpassed';
+            if (totalDiff < 0) diffClassTotal = 'prazo-vencido';
+
+            // [NOVA ALTERAÇÃO] Adiciona a linha de total
+            tabelaHtml += `
+                <tr style="background-color: #f8faff; border-top: 2px solid #dbe3f0;">
+                    <td style="font-weight: 700;">Total</td>
+                    <td style="font-weight: 700;">${formatFn(totalMeta)}</td>
+                    <td style="font-weight: 700;">${formatFn(totalRealizado)}</td>
+                    <td style="font-weight: 700;" class="${diffClassTotal}">${formatFn(totalDiff)}</td>
+                </tr>
+            `;
+
+            tabelaHtml += `</tbody></table></div>`;
+            return tabelaHtml;
+        }
+
+        // =========================================================================
+        // [NOVA ALTERAÇÃO] FUNÇÃO DE EXPORTAR PARA CSV
+        // =========================================================================
+        /**
+         * @author ERIVANDRO JUNIOR
+         * Constrói e baixa um arquivo CSV com base nos dados do histórico.
+         */
+        function exportarParaCSV(obrasOrdenadas) {
+            console.log("Iniciando exportação CSV...");
+            
+            const allMonths = new Set();
+            const dataMatrix = {};
+            const tipos = [
+                { key: 'dadosImobilizacao', nome: 'Imobilização' },
+                { key: 'dadosEconomia', nome: 'Economia' },
+                { key: 'dadosAvanceFisico', nome: 'Avanço Físico' }
+            ];
+            const metricas = [
+                "Imobilização Projetada", "Imobilização Realizada",
+                "Economia Projetada", "Economia Realizada",
+                "Avanço Físico Projetado", "Avanço Físico Realizado"
+            ];
+
+            // 1. Mapear todos os dados e meses existentes
+            for (const obra of obrasOrdenadas) {
+                const obraName = obra.nomeCurto;
+                dataMatrix[obraName] = {};
+                for (const metrica of metricas) {
+                    dataMatrix[obraName][metrica] = {};
+                }
+
+                for (const tipo of tipos) {
+                    const hist = obra[tipo.key]?.historico;
+                    if (hist) {
+                        for (const item of hist) {
+                            allMonths.add(item.mes); // Adiciona "2025-08", "2025-09"
+                            dataMatrix[obraName][tipo.nome + ' Projetada'][item.mes] = item.meta || 0;
+                            dataMatrix[obraName][tipo.nome + ' Realizada'][item.mes] = item.realizado || 0;
+                        }
+                    }
+                }
+            }
+
+            // 2. Criar cabeçalho dos meses, ordenado
+            const sortedMonths = Array.from(allMonths).sort();
+            
+            // Mapeia "2025-08" para "Ago/2025" para um cabeçalho mais amigável
+            const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            const headerMeses = sortedMonths.map(mes => {
+                const [year, month] = mes.split('-');
+                return `${monthNames[parseInt(month, 10) - 1]}/${year}`;
+            });
+            
+            const header = ["Contrato", "Métrica", ...headerMeses];
+            let csvContent = [];
+            csvContent.push(header.join(';')); // Usa ponto-e-vírgula
+
+            // 3. Construir as linhas do CSV
+            for (const obra of obrasOrdenadas) {
+                const obraName = obra.nomeCurto;
+                
+                for (const metrica of metricas) {
+                    let row = [obraName, metrica];
+                    for (const month of sortedMonths) {
+                        const valor = dataMatrix[obraName][metrica][month] || 0;
+                        
+                        // [ALTERAÇÃO EXISTENTE] CORREÇÃO PARA O EXCEL
+                        // Exporta o número "puro" (ex: 12345.67)
+                        row.push(valor); 
+                    }
+                    csvContent.push(row.join(';'));
+                }
+                // Adiciona uma linha em branco entre os contratos para legibilidade
+                csvContent.push(''); 
+            }
+
+            // 4. Criar e baixar o arquivo
+            // \uFEFF é o "BOM", um caractere especial para o Excel entender acentos (UTF-8)
+            const csvString = '\uFEFF' + csvContent.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            
+            const link = document.createElement("a");
+            if (link.download !== undefined) { // Check for download attribute
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "relatorio_metas_acumuladas.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+
+        // =========================================================================
+        // [FUNÇÕES DE LANÇAMENTO]
+        // =========================================================================
+        
+        /**
+        * @author ERIVANDRO JUNIOR
+        * Gera o texto formatado a partir do banco de dados para o textarea.
+        */
+        function gerarTextoHistorico(obras) {
+            let output = [];
+            const tipos = [
+                { key: 'dadosImobilizacao', nome: 'Imobilização' },
+                { key: 'dadosEconomia', nome: 'Economia' },
+                { key: 'dadosAvanceFisico', nome: 'Avanço' } // Adicionando Avanço
+            ];
+
+            // [ALTERAÇÃO EXISTENTE] Aplicando a mesma ordem personalizada da página de visualização
+            const ordemDosCards = ["1B1", "1A2", "1B2", "1A1", "6A", "17B", "17A"];
+            const ordemMap = new Map(ordemDosCards.map((nome, index) => [nome, index]));
+            
+            const getSortIndex = (obra) => {
+                const sufixo = obra.nomeCurto.split(' ').pop(); 
+                return ordemMap.has(sufixo) ? ordemMap.get(sufixo) : Infinity;
+            };
+
+            const obrasOrdenadas = [...obras].sort((a, b) => {
+                const indexA = getSortIndex(a);
+                const indexB = getSortIndex(b);
+                if (indexA === Infinity && indexB === Infinity) {
+                    return a.nomeCurto.localeCompare(b.nomeCurto);
+                }
+                return indexA - indexB;
+            });
+
+            for (const obra of obrasOrdenadas) {
+                output.push(`\n# ${obra.nomeCurto}`);
+                let hasEntries = false;
+
+                for (const tipo of tipos) {
+                    const dados = obra[tipo.key];
+                    if (dados && dados.historico && dados.historico.length > 0) {
+                        // Ordena o histórico por mês (ASCENDENTE)
+                        dados.historico.sort((a,b) => a.mes.localeCompare(b.mes));
+                        for (const item of dados.historico) {
+                            // Formato: TIPO, YYYY-MM, META, REALIZADO
+                            output.push(`${tipo.nome}, ${item.mes}, ${item.meta || 0}, ${item.realizado || 0}`);
+                            hasEntries = true;
+                        }
+                    }
+                }
+                if (!hasEntries) output.push(`(Nenhum histórico lançado)`);
+            }
+            return output.join('\n').trim();
+        }
+
+        /**
+        * @author ERIVANDRO JUNIOR
+        * Processa o texto do textarea e atualiza o database.
+        */
+        function handleSalvarHistorico() {
+            const text = document.getElementById('historico-textarea').value;
+            const lines = text.split('\n');
+            let currentObra = null;
+
+            if (!confirm("Tem certeza que deseja salvar? Isso irá sobrescrever o histórico existente.")) {
+                return;
+            }
+
+            // 1. Limpa TODOS os históricos existentes. O textarea é a "fonte da verdade".
+            for (const obra of database.obras) {
+                if (obra.dadosImobilizacao) obra.dadosImobilizacao.historico = [];
+                if (obra.dadosEconomia) obra.dadosEconomia.historico = [];
+                if (obra.dadosAvanceFisico) obra.dadosAvanceFisico.historico = [];
+            }
+
+            // 2. Processa o texto linha por linha
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                
+                // Se a linha é um Contrato (começa com #)
+                if (trimmedLine.startsWith('#')) {
+                    const nomeCurto = trimmedLine.substring(1).trim();
+                    currentObra = database.obras.find(o => o.nomeCurto === nomeCurto);
+                    if (!currentObra) console.warn(`Obra não encontrada: ${nomeCurto}`);
+                    continue; // Pula para a próxima linha
+                }
+
+                // Ignora linhas se não tiver contrato selecionado ou se for linha vazia/comentário
+                if (!currentObra || trimmedLine === "" || trimmedLine.startsWith('(')) {
+                    continue;
+                }
+
+                // Se a linha é um dado (TIPO, MES, META, REALIZADO)
+                const parts = trimmedLine.split(',').map(s => s.trim());
+                if (parts.length !== 4) {
+                    console.warn(`Linha mal formatada: ${trimmedLine}`);
+                    continue;
+                }
+
+                const [tipo, mes, metaStr, realizadoStr] = parts;
+                const meta = parseFloat(metaStr) || 0;
+                const realizado = parseFloat(realizadoStr) || 0;
+
+                // Validação simples do mês
+                if (!/^\d{4}-\d{2}$/.test(mes)) {
+                    console.warn(`Formato de mês inválido: ${mes}. Use YYYY-MM.`);
+                    continue;
+                }
+                
+                const newItem = { mes, meta, realizado };
+                let targetArray = null;
+
+                if (tipo.toLowerCase().startsWith('imobil')) {
+                    
+                    // [BUG CORRIGIDO NA VERSÃO ANTERIOR]
+                    if (!currentObra.dadosImobilizacao) currentObra.dadosImobilizacao = {};
+
+                    if (!currentObra.dadosImobilizacao.historico) currentObra.dadosImobilizacao.historico = [];
+                    targetArray = currentObra.dadosImobilizacao.historico;
+                } else if (tipo.toLowerCase().startsWith('econ')) {
+                    if (!currentObra.dadosEconomia) currentObra.dadosEconomia = {};
+                    if (!currentObra.dadosEconomia.historico) currentObra.dadosEconomia.historico = [];
+                    targetArray = currentObra.dadosEconomia.historico;
+                } else if (tipo.toLowerCase().startsWith('avan')) { // Adicionamos 'Avanço'
+                    if (!currentObra.dadosAvanceFisico) currentObra.dadosAvanceFisico = {};
+                    if (!currentObra.dadosAvanceFisico.historico) currentObra.dadosAvanceFisico.historico = [];
+                    targetArray = currentObra.dadosAvanceFisico.historico;
+                } else {
+                    console.warn(`Tipo desconhecido: ${tipo}`);
+                    continue;
+                }
+
+                targetArray.push(newItem);
+            }
+
+            // 3. Manda salvar o database modificado
+            console.log("Database atualizado com histórico:", database);
+            alert("Histórico processado. Salvando no banco...");
+            salvarDados(true); // O 'true' faz a página recarregar
+        }
+
+        /**
+        * @author ERIVANDRO JUNIOR
+        * Mostra a página de inserção de histórico.
+        */
+        function mostrarPaginaHistorico() {
+            if (!isAdmin) {
+                contentArea.innerHTML = `<div class="content-header"><h1>Acesso Negado</h1><p>Esta área é restrita.</p></div>`;
+                return;
+            }
+
+            // Gera o texto atual que está no banco, para facilitar a edição
+            let currentText = gerarTextoHistorico(database.obras);
+
+            contentArea.innerHTML = `
+                <div class="content-header">
+                    <div><h1>Lançar Histórico Mensal</h1>
+                    <p>Use o formato abaixo. O salvamento <strong>sobrescreve todo</strong> o histórico anterior.</p>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <h3>Instruções</h3>
+                    <ul style="font-size: 0.9rem;">
+                        <li>Linhas com <code># Nome do Contrato</code> definem qual contrato os dados abaixo pertencem. (Ex: <code># Pacote 17A</code>)</li>
+                        <li>Linhas de dados devem ter o formato: <code>TIPO, YYYY-MM, META, REALIZADO</code></li>
+                        <li><strong>Tipos válidos:</strong> <code>Imobilização</code>, <code>Economia</code>, <code>Avanço</code> (sem acentos).</li>
+                        <li><strong>Exemplo de linha de dado:</strong> <code>Imobilização, 2025-03, 50000, 65120.50</code></li>
+                        <li><strong>Exemplo de linha de dado:</strong> <code>Economia, 2025-04, 100, 98</code></li>
+                    </ul>
+                    <textarea id="historico-textarea" 
+                        style="width: 100%; height: 50vh; font-family: 'Courier New', Courier, monospace; font-size: 14px; padding: 10px; border: 1px solid #ccc; border-radius: 8px;"
+                        placeholder="# Pacote 17A\nImobilização, 2025-03, 50000, 65000\nEconomia, 2025-03, 100, 110\n\n# Pacote 17B\nImobilização, 2025-03, 30000, 32000"
+                    >${currentText}</textarea>
+                    <div style="text-align: right; margin-top: 20px;">
+                        <button id="btn-salvar-historico" class="btn-primary" style="background-color: #c82333;">Salvar e Sobrescrever Histórico</button>
+                    </div>
+                </div>
+            `;
+
+            // Adiciona o listener para o botão de salvar
+            document.getElementById('btn-salvar-historico').addEventListener('click', handleSalvarHistorico);
+        }
+        
+        // =========================================================================
+        // FIM DAS FUNÇÕES DE HISTÓRICO
+        // =========================================================================
 
         async function carregarDados() { 
             try { 
                 const r = await fetch(JSONBIN_URL, { headers: { 'X-Master-Key': API_KEY } }); 
+                if (!r.ok) throw new Error(`Falha na rede: ${r.status}`); 
                 const d = await r.json(); 
                 database = d.record; 
+                if (!database.obras) database.obras = []; 
+                if (!database.comuniqueses) database.comuniqueses = []; 
                 gerarNavegacao(database.obras); 
-                // Inicia na Visão Geral
-                mostrarVisaoGeral(database.obras);
+                const linkAtivo = navList.querySelector('a.active');
+                if (linkAtivo) {
+                    linkAtivo.click();
+                } else {
+                    mostrarPainelTV();
+                }
             } catch (e) { 
-                contentArea.innerHTML = "<h1>Erro na conexão</h1>";
+                console.error("Erro fatal:", e); 
+                contentArea.innerHTML = `<div class="content-header"><div><h1>Erro ao Carregar Dados</h1><p>Não foi possível conectar. Verifique URL/Chave e conexão. Detalhes: ${e.message}</p></div></div>`;
             } 
         }
-
-        function gerarNavegacao(obras) { 
-            navList.innerHTML = `
-                <li><a data-id="painel-tv">Painel TV</a></li>
-                <li><a data-id="visao-geral" class="active">Visão Geral</a></li>
-                <li><a data-id="comuniqueses">Comunique-se</a></li>
-                <li><a data-id="metas-acumuladas">Metas Acumuladas</a></li>
-            `;
-            if (isAdmin) navList.innerHTML += `<li><a data-id="lancar-historico">Lançar Histórico</a></li>`;
+        
+        let saveTimeout;
+        function salvarDados(fU = false) {
+            if (!isAdmin) { console.warn("Modo de leitura. Salvamento bloqueado."); return; }
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => { 
+                console.log("Salvando..."); 
+                try { 
+                    const r = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY }, body: JSON.stringify(database) }); 
+                    if (!r.ok) throw new Error('Falha ao salvar.'); 
+                    console.log("Salvo!"); 
+                    if (fU) { 
+                        const aL = navList.querySelector('a.active'); 
+                        if (aL) aL.click(); 
+                    } 
+                } catch (e) { 
+                    console.error("Erro ao salvar:", e); 
+                    alert("Não foi possível salvar."); 
+                } 
+            }, 1500);
+        }
+        
+        function handleNavClick(e) { 
+            e.preventDefault(); 
+            document.removeEventListener('keydown', handlePainelTVKeyPress); 
+            clearInterval(slideshowInterval); 
+            const id = e.target.dataset.id; 
+            const cA = navList.querySelector('a.active'); 
+            if (cA) cA.classList.remove('active'); 
+            e.target.classList.add('active'); 
+            if (document.fullscreenElement) document.exitFullscreen(); 
+            sidebar.classList.remove('hidden'); 
+            contentArea.classList.remove('fullscreen'); 
+            if (id === 'visao-geral') mostrarVisaoGeral(database.obras); 
+            else if (id === 'painel-tv') mostrarPainelTV(); 
+            else if (id === 'comuniqueses') mostrarPaginaComuniqueses(); 
             
-            obras.sort((a,b) => a.nomeCurto.localeCompare(b.nomeCurto)).forEach(o => {
-                navList.innerHTML += `<li><a data-id="${o.id}">${o.nomeCurto}</a></li>`;
+            // [NOVA ALTERAÇÃO] Lida com o clique na página de visualização
+            else if (id === 'metas-acumuladas') mostrarMetasAcumuladas(database.obras);
+            
+            // [ALTERAÇÃO EXISTENTE] Lida com o clique no novo botão
+            else if (id === 'lancar-historico') mostrarPaginaHistorico();
+            
+            else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); } 
+        }
+        
+        function handleInputChange(e) { const i = e.target, oId = i.dataset.obraId, t = i.dataset.tipo; let vN = parseFloat(i.value.replace(/\./g, '').replace(',', '.')) || 0; const o = database.obras.find(x => x.id === oId); if (!o) return; switch (t) { case 'imobilizacao': o.dadosImobilizacao.atual = vN; break; case 'economia': o.dadosEconomia.atual = Math.round(vN); break; case 'avance': o.dadosAvanceFisico.atual = Math.round(vN); break; } salvarDados(); }
+        function handleInputFormatting(e) { const i = e.target, t = i.dataset.tipo; let v = i.value.replace(/\D/g, ''); if (v === '') { i.value = ''; return; } if (t.includes('imobilizacao')) { const nV = parseInt(v, 10) / 100; i.value = nV.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); } else { i.value = parseInt(v, 10).toLocaleString('pt-BR'); } }
+        function handleExcluirClick(e) { const oId = e.target.dataset.obraId; const o = database.obras.find(x => x.id === oId); if (!o) return; if (confirm(`Excluir "${o.nomeCompleto}"?\nAção permanente.`)) { const idx = database.obras.findIndex(x => x.id === oId); if (idx > -1) { database.obras.splice(idx, 1); salvarDados(true); gerarNavegacao(database.obras); navList.querySelector('a[data-id="visao-geral"]').click(); } } }
+        
+        const modalObras = document.getElementById('modal-novo-contrato');
+        const formObras = document.getElementById('form-novo-contrato');
+        const btnAddObra = document.getElementById('btn-adicionar-contrato');
+        modalObras.querySelectorAll('.close-button').forEach(b => b.addEventListener('click', () => fecharModal(modalObras, formObras)));
+        modalObras.addEventListener('click', e => { if (e.target === modalObras) fecharModal(modalObras, formObras); });
+        
+        if (!isAdmin) {
+            btnAddObra.style.display = 'none';
+        } else {
+            btnAddObra.addEventListener('click', () => abrirModal(modalObras));
+            formObras.addEventListener('submit', e => {
+                e.preventDefault();
+                const nO = { id: `obra-${Date.now()}`, nomeCurto: formObras.querySelector('#nome-curto').value, nomeCompleto: formObras.querySelector('#nome-completo').value, dadosImobilizacao: { meta: parseFloat(formObras.querySelector('#meta-imob').value) || 0, atual: 0 }, dadosEconomia: { meta: parseInt(formObras.querySelector('#meta-econ').value, 10) || 0, atual: 0 }, dadosAvanceFisico: { meta: parseInt(formObras.querySelector('#meta-avance').value, 10) || 0, atual: 0 } };
+                database.obras.push(nO);
+                salvarDados(true);
+                gerarNavegacao(database.obras);
+                fecharModal(modalObras, formObras);
+                navList.querySelector('a[data-id="visao-geral"]').click();
             });
-
-            navList.querySelectorAll('a').forEach(l => l.addEventListener('click', handleNavClick)); 
         }
 
-        function handleNavClick(e) {
-            const id = e.target.dataset.id;
-            navList.querySelectorAll('a').forEach(a => a.classList.remove('active'));
-            e.target.classList.add('active');
-            
-            if (id === 'visao-geral') mostrarVisaoGeral(database.obras);
-            else if (id === 'painel-tv') mostrarPainelTV();
-            else if (id === 'comuniqueses') mostrarComuniqueses();
-            else if (id === 'metas-acumuladas') mostrarMetasAcumuladas();
-            else if (id === 'lancar-historico') mostrarLancarHistorico();
-            else {
-                const obra = database.obras.find(o => o.id === id);
-                if (obra) mostrarPaginaObra(obra);
+        const modalCS = document.getElementById('modal-comuniquese');
+        const formCS = document.getElementById('form-comuniquese');
+        modalCS.querySelectorAll('.close-button').forEach(b => b.addEventListener('click', () => fecharModal(modalCS, formCS)));
+        modalCS.addEventListener('click', e => { if (e.target === modalCS) fecharModal(modalCS, formCS); });
+        
+        function abrirModalCS(id = null) {
+            if (!isAdmin) return;
+            formCS.reset();
+            const title = modalCS.querySelector('#modal-cs-title');
+            if (id) { const c = database.comuniqueses.find(x => x.id === id); if (!c) return; title.textContent = "Editar Comunique-se"; document.getElementById('cs-id').value = c.id; document.getElementById('cs-protocolo').value = c.protocolo; document.getElementById('cs-orgao').value = c.orgaoEmissor; document.getElementById('cs-data-recebimento').value = c.dataRecebimento; document.getElementById('cs-prazo-dias').value = c.prazoDias; document.getElementById('cs-assunto').value = c.assunto; document.getElementById('cs-responsavel').value = c.responsavel; document.getElementById('cs-status').value = c.status; document.getElementById('cs-data-resposta').value = c.dataResposta || ''; document.getElementById('cs-oficio-resposta').value = c.oficioResposta || ''; document.getElementById('cs-observacao').value = c.observacao || ''; } else { title.textContent = "Novo Comunique-se"; document.getElementById('cs-id').value = ''; }
+            abrirModal(modalCS);
+        }
+        
+        if (isAdmin) {
+            formCS.addEventListener('submit', e => {
+                e.preventDefault();
+                const id = document.getElementById('cs-id').value;
+                const dR = new Date(document.getElementById('cs-data-recebimento').value + 'T00:00:00');
+                const pD = parseInt(document.getElementById('cs-prazo-dias').value, 10);
+                dR.setDate(dR.getDate() + pD);
+                const dL = dR.toISOString().split('T')[0];
+                const cD = { protocolo: document.getElementById('cs-protocolo').value, orgaoEmissor: document.getElementById('cs-orgao').value, dataRecebimento: document.getElementById('cs-data-recebimento').value, prazoDias: pD, dataLimite: dL, assunto: document.getElementById('cs-assunto').value, responsavel: document.getElementById('cs-responsavel').value, status: document.getElementById('cs-status').value, dataResposta: document.getElementById('cs-data-resposta').value || null, oficioResposta: document.getElementById('cs-oficio-resposta').value || '', observacao: document.getElementById('cs-observacao').value || '', };
+                if (id) { const idx = database.comuniqueses.findIndex(c => c.id === id); if (idx > -1) database.comuniqueses[idx] = { ...database.comuniqueses[idx], ...cD }; } else { cD.id = `com-${Date.now()}`; database.comuniqueses.push(cD); }
+                salvarDados(true);
+                fecharModal(modalCS, formCS);
+            });
+        }
+        
+        function abrirModal(m) { m.classList.add('active'); } function fecharModal(m, f) { m.classList.remove('active'); if (f) f.reset(); }
+        function enterFullScreenMode() { sidebar.classList.add('hidden'); contentArea.classList.add('fullscreen'); document.documentElement.requestFullscreen().catch(e => console.error(e)); }
+        function exitFullScreenMode() { if (document.fullscreenElement) document.exitFullscreen(); sidebar.classList.remove('hidden'); contentArea.classList.remove('fullscreen'); }
+        document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) exitFullScreenMode(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.fullscreenElement) exitFullScreenMode(); });
+        
+
+        // --- Lógica para o menu hamburger ---
+        const toggleBtn = document.getElementById('sidebar-toggle-btn');
+        const sidebarEl = document.querySelector('.sidebar');
+        const overlayEl = document.getElementById('sidebar-overlay');
+
+        function openSidebar() {
+            sidebarEl.classList.add('is-open');
+            overlayEl.classList.add('is-open');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeSidebar() {
+            sidebarEl.classList.remove('is-open');
+            overlayEl.classList.remove('is-open');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (sidebarEl.classList.contains('is-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
             }
-        }
+        });
 
-        function mostrarVisaoGeral(obras) {
-            const tImob = obras.reduce((s, o) => s + (o.dadosImobilizacao?.atual || 0), 0);
-            const mImob = obras.reduce((s, o) => s + (o.dadosImobilizacao?.meta || 0), 0);
-            const perc = (tImob / mImob * 100).toFixed(1);
-
-            contentArea.innerHTML = `
-                <div class="content-header"><h1>Visão Geral do Projeto</h1></div>
-                <div class="dashboard-grid">
-                    <section class="metrics">
-                        <div class="metric-card"><div>Total Imobilizado</div><div class="value">${formatCurrency(tImob)}</div></div>
-                    </section>
-                    <section class="metric-card">
-                        <h3>Progresso Geral (Imobilização)</h3>
-                        <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${perc}%">${perc}%</div></div>
-                    </section>
-                </div>
-            `;
-        }
-
-        function mostrarPaginaObra(o) {
-            const p = ((o.dadosImobilizacao.atual / o.dadosImobilizacao.meta) * 100).toFixed(1);
-            contentArea.innerHTML = `
-                <div class="content-header"><h1>${o.nomeCompleto}</h1></div>
-                <div class="dashboard-grid">
-                    <div class="metric-card">
-                        <h3>Imobilização Financeira</h3>
-                        <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${p}%">${p}%</div></div>
-                        <p>Realizado: ${formatCurrency(o.dadosImobilizacao.atual)} / Meta: ${formatCurrency(o.dadosImobilizacao.meta)}</p>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Funções de Placeholder para as outras páginas não darem erro
-        function mostrarPainelTV() { contentArea.innerHTML = "<h1>Painel TV</h1><p>Slideshow carregando...</p>"; }
-        function mostrarComuniqueses() { contentArea.innerHTML = "<h1>Comunique-se</h1><p>Lista de protocolos...</p>"; }
-        function mostrarMetasAcumuladas() { contentArea.innerHTML = "<h1>Metas Acumuladas</h1>"; }
-        function mostrarLancarHistorico() { contentArea.innerHTML = "<h1>Lançar Histórico</h1>"; }
-
-        if (!isAdmin) document.getElementById('btn-adicionar-contrato').style.display = 'none';
+        overlayEl.addEventListener('click', closeSidebar);
+        
+        navList.addEventListener('click', (e) => {
+            // [NOVA ALTERAÇÃO] Aumentando o breakpoint para 992px
+            if (e.target.tagName === 'A' && window.innerWidth <= 992) {
+                closeSidebar();
+            }
+        });
 
         carregarDados();
     });
