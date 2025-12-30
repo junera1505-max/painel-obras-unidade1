@@ -6,16 +6,16 @@
     <title>Sistema de Acompanhamento de Obras</title>
     
     <style>
-        /* CSS PROFISSIONAL RESTAURADO */
+        /* CSS ORIGINAL RESTAURADO (Sem Natal) */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         body, html { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; color: #333; height: 100%; overflow: hidden; background-color: #f4f7fa; }
         * { box-sizing: border-box; }
-        .system-container { display: flex; height: 100vh; }
+        .system-container { display: flex; height: 100vh; transition: all 0.3s ease-in-out; }
         
-        /* Barra lateral Azul Escuro Profissional */
+        /* BARRA LATERAL AZUL PROFISSIONAL */
         .sidebar { 
             width: 280px; 
-            background-color: #0d1b2a; /* Azul Marinho Profissional */
+            background-color: #0b1a2a; /* Azul escuro sóbrio */
             color: white; 
             padding: 20px; 
             display: flex; 
@@ -23,69 +23,62 @@
             flex-shrink: 0; 
             border-right: 1px solid rgba(255, 255, 255, 0.1); 
             box-shadow: 2px 0 10px rgba(0,0,0,0.1); 
+            transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out; 
             overflow-y: auto; 
             position: relative; 
             z-index: 10; 
         }
-
+        .sidebar.hidden { width: 0; opacity: 0; padding: 0; pointer-events: none; }
         .sidebar-header .company-logo { width: 80%; margin: 0 auto 30px auto; display: block; }
-        #main-nav { flex-grow: 1; overflow-y: auto; }
-        #main-nav ul { list-style-type: none; padding: 0; margin: 0; }
-        #main-nav li a { 
-            display: block; 
-            padding: 12px 15px; 
-            color: #a0aec0; 
-            text-decoration: none; 
-            border-radius: 8px; 
-            margin-bottom: 5px; 
-            font-weight: 500; 
-            transition: all 0.2s ease; 
-            cursor: pointer; 
-        }
-        #main-nav li a:hover { background-color: rgba(255, 255, 255, 0.05); color: white; }
-        #main-nav li a.active { background-color: #ffffff; color: #0d1b2a; font-weight: 600; }
-
-        .content-area { flex-grow: 1; padding: 40px; overflow-y: auto; background-color: #f4f7fa; position: relative; }
-        .content-header h1 { font-size: 2rem; color: #1e3a5f; margin: 0; }
         
-        .btn-primary { background-color: #007bff; color: white; padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
-        #btn-adicionar-contrato { 
-            width: 100%; 
-            padding: 12px; 
-            background-color: #38a169; 
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            margin-top: 20px;
-        }
+        #main-nav { flex-grow: 1; overflow-y: auto; margin-bottom: 20px; }
+        #main-nav ul { list-style-type: none; padding: 0; margin: 0; }
+        #main-nav li a { display: block; padding: 15px 20px; color: #e0e0e0; text-decoration: none; border-radius: 8px; margin-bottom: 5px; font-weight: 500; transition: all 0.2s ease; cursor: pointer; position: relative; }
+        #main-nav li a:hover { background-color: rgba(255, 255, 255, 0.1); color: white; transform: translateY(-2px); }
+        #main-nav li a.active { background-color: #ffffff; color: #0b1a2a; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transform: translateY(-2px); }
+        
+        .content-area { flex-grow: 1; padding: 40px; overflow-y: auto; background-color: #f4f7fa; position: relative; z-index: 5; }
+        .content-area.fullscreen { padding: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .content-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;}
+        .content-header h1 { font-size: 2.2rem; color: #1e3a5f; margin: 0; }
+        
+        .btn-primary { background-color: #007bff; color: white; padding: 10px 20px; border-radius: 6px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+        #btn-adicionar-contrato { width: 100%; padding: 15px; background-color: #28a745; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; }
 
-        /* Estilos de Dashboard e Tabelas */
-        .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px; }
-        .metric-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-        .metric-card .value { font-size: 2rem; font-weight: 700; color: #2b6cb0; }
-        .progress-bar-container { background: #edf2f7; border-radius: 10px; height: 20px; overflow: hidden; margin: 10px 0; }
-        .progress-bar-fill { background: #48bb78; height: 100%; transition: width 0.5s ease; }
+        /* DASHBOARD CARDS */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; text-align: center; }
+        .metric-card { background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #dbe3f0; box-shadow: 0 4px 12px rgba(0,20,60,0.05); }
+        .metric-card .value { font-size: 2.2rem; font-weight: 700; color: #007bff; }
+        .progress-bar-container { background-color: #e9ecef; border-radius: 8px; height: 25px; margin-bottom: 15px; overflow: hidden; }
+        .progress-bar-fill { background-color: #28a745; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; transition: width 0.5s ease-in-out; }
+        
+        /* TABELAS */
+        .cs-table-wrapper { overflow-x: auto; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .cs-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        .cs-table th, .cs-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        .cs-table th { background-color: #f8faff; color: #1e3a5f; font-weight: 600; }
+
+        /* PAINEL TV / SLIDESHOW */
+        .panel-slide { display: none; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); flex-direction: column; width: 100%; }
+        .panel-slide.active { display: flex; }
+        
+        /* REGRAS DO MODAL */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; width: 90%; max-width: 700px; border-radius: 12px; padding: 20px; max-height: 90vh; overflow-y: auto; }
     </style>
 </head>
 <body>
 
     <div class="system-container">
         <aside class="sidebar">
-            <header class="sidebar-header">
-                <img src="imagem2.png" alt="Logo" class="company-logo">
-            </header>
+            <header class="sidebar-header"><img src="imagem2.png" alt="Logo" class="company-logo"></header>
             <nav id="main-nav"><ul></ul></nav>
-            <div class="sidebar-footer">
-                <button id="btn-adicionar-contrato">+ Adicionar Novo Contrato</button>
-            </div>
+            <div class="sidebar-footer"><button id="btn-adicionar-contrato">+ Novo Contrato</button></div>
         </aside>
         <main id="content-area" class="content-area">
-            <div class="welcome-message">
-                <h1>Carregando...</h1>
-                <p>Buscando dados mais recentes.</p>
-            </div>
+            <div class="welcome-message"><h1>Carregando...</h1><p>Buscando dados mais recentes.</p></div>
         </main>
     </div>
 
@@ -99,80 +92,92 @@
         let database = { obras: [], comuniqueses: [] };
         const navList = document.querySelector('#main-nav ul');
         const contentArea = document.getElementById('content-area');
-
-        // Formatações
+        
         const formatCurrency = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
         async function carregarDados() { 
             try { 
                 const r = await fetch(JSONBIN_URL, { headers: { 'X-Master-Key': API_KEY } }); 
-                const data = await r.json(); 
-                database = data.record; 
-                renderizarNavegacao();
-                // Forçar o carregamento da Visão Geral no início
-                mostrarVisaoGeral();
+                const d = await r.json(); 
+                database = d.record; 
+                gerarNavegacao(database.obras); 
+                // Inicia na Visão Geral
+                mostrarVisaoGeral(database.obras);
             } catch (e) { 
-                contentArea.innerHTML = "<h1>Erro ao carregar dados.</h1>";
-                console.error(e);
+                contentArea.innerHTML = "<h1>Erro na conexão</h1>";
             } 
         }
 
-        function renderizarNavegacao() {
+        function gerarNavegacao(obras) { 
             navList.innerHTML = `
+                <li><a data-id="painel-tv">Painel TV</a></li>
                 <li><a data-id="visao-geral" class="active">Visão Geral</a></li>
                 <li><a data-id="comuniqueses">Comunique-se</a></li>
                 <li><a data-id="metas-acumuladas">Metas Acumuladas</a></li>
             `;
+            if (isAdmin) navList.innerHTML += `<li><a data-id="lancar-historico">Lançar Histórico</a></li>`;
             
-            database.obras.forEach(obra => {
-                navList.innerHTML += `<li><a data-id="${obra.id}">${obra.nomeCurto}</a></li>`;
+            obras.sort((a,b) => a.nomeCurto.localeCompare(b.nomeCurto)).forEach(o => {
+                navList.innerHTML += `<li><a data-id="${o.id}">${o.nomeCurto}</a></li>`;
             });
 
-            navList.querySelectorAll('a').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    document.querySelectorAll('#main-nav a').forEach(a => a.classList.remove('active'));
-                    e.target.classList.add('active');
-                    roteador(e.target.dataset.id);
-                });
-            });
+            navList.querySelectorAll('a').forEach(l => l.addEventListener('click', handleNavClick)); 
         }
 
-        function roteador(id) {
-            if (id === 'visao-geral') mostrarVisaoGeral();
-            else if (id === 'comuniqueses') contentArea.innerHTML = "<h1>Comunique-se</h1><p>Conteúdo em desenvolvimento.</p>";
-            else if (id === 'metas-acumuladas') contentArea.innerHTML = "<h1>Metas Acumuladas</h1>";
+        function handleNavClick(e) {
+            const id = e.target.dataset.id;
+            navList.querySelectorAll('a').forEach(a => a.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            if (id === 'visao-geral') mostrarVisaoGeral(database.obras);
+            else if (id === 'painel-tv') mostrarPainelTV();
+            else if (id === 'comuniqueses') mostrarComuniqueses();
+            else if (id === 'metas-acumuladas') mostrarMetasAcumuladas();
+            else if (id === 'lancar-historico') mostrarLancarHistorico();
             else {
                 const obra = database.obras.find(o => o.id === id);
                 if (obra) mostrarPaginaObra(obra);
             }
         }
 
-        function mostrarVisaoGeral() {
-            const totalImob = database.obras.reduce((acc, o) => acc + (o.dadosImobilizacao?.atual || 0), 0);
+        function mostrarVisaoGeral(obras) {
+            const tImob = obras.reduce((s, o) => s + (o.dadosImobilizacao?.atual || 0), 0);
+            const mImob = obras.reduce((s, o) => s + (o.dadosImobilizacao?.meta || 0), 0);
+            const perc = (tImob / mImob * 100).toFixed(1);
+
             contentArea.innerHTML = `
                 <div class="content-header"><h1>Visão Geral do Projeto</h1></div>
                 <div class="dashboard-grid">
+                    <section class="metrics">
+                        <div class="metric-card"><div>Total Imobilizado</div><div class="value">${formatCurrency(tImob)}</div></div>
+                    </section>
+                    <section class="metric-card">
+                        <h3>Progresso Geral (Imobilização)</h3>
+                        <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${perc}%">${perc}%</div></div>
+                    </section>
+                </div>
+            `;
+        }
+
+        function mostrarPaginaObra(o) {
+            const p = ((o.dadosImobilizacao.atual / o.dadosImobilizacao.meta) * 100).toFixed(1);
+            contentArea.innerHTML = `
+                <div class="content-header"><h1>${o.nomeCompleto}</h1></div>
+                <div class="dashboard-grid">
                     <div class="metric-card">
-                        <div class="label">Total Imobilizado</div>
-                        <div class="value">${formatCurrency(totalImob)}</div>
+                        <h3>Imobilização Financeira</h3>
+                        <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${p}%">${p}%</div></div>
+                        <p>Realizado: ${formatCurrency(o.dadosImobilizacao.atual)} / Meta: ${formatCurrency(o.dadosImobilizacao.meta)}</p>
                     </div>
                 </div>
             `;
         }
 
-        function mostrarPaginaObra(obra) {
-            contentArea.innerHTML = `
-                <div class="content-header"><h1>${obra.nomeCompleto}</h1></div>
-                <div class="dashboard-grid">
-                    <div class="metric-card">
-                        <h3>Progresso da Obra</h3>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" style="width: 70%"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
+        // Funções de Placeholder para as outras páginas não darem erro
+        function mostrarPainelTV() { contentArea.innerHTML = "<h1>Painel TV</h1><p>Slideshow carregando...</p>"; }
+        function mostrarComuniqueses() { contentArea.innerHTML = "<h1>Comunique-se</h1><p>Lista de protocolos...</p>"; }
+        function mostrarMetasAcumuladas() { contentArea.innerHTML = "<h1>Metas Acumuladas</h1>"; }
+        function mostrarLancarHistorico() { contentArea.innerHTML = "<h1>Lançar Histórico</h1>"; }
 
         if (!isAdmin) document.getElementById('btn-adicionar-contrato').style.display = 'none';
 
