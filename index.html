@@ -6,7 +6,7 @@
     <title>Sistema de Acompanhamento de Obras</title>
     
     <style>
-        /* CSS completo - Ajustado para o modo TV */
+        /* CSS completo - Ajuste FINAL para TV (Grid Overlay) */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         body, html { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; color: #333; height: 100%; overflow: hidden; background-color: #f4f7fa; }
         * { box-sizing: border-box; }
@@ -21,8 +21,8 @@
         #main-nav li a.active { background-color: #ffffff; color: #1e3a5f; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transform: translateY(-2px); }
         .content-area { flex-grow: 1; padding: 40px; overflow-y: auto; background-color: #f4f7fa; transition: padding-left 0.3s ease-in-out; position: relative; }
         
-        /* AJUSTE PARA TELA CHEIA (TV) */
-        .content-area.fullscreen { padding: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; background-color: #eef2f6; }
+        /* MODO TELA CHEIA (TV) */
+        .content-area.fullscreen { padding: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; background-color: #eef2f6; }
         
         .content-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;}
         .content-header h1 { font-size: 2.2rem; color: #1e3a5f; margin: 0; }
@@ -104,17 +104,15 @@
         .fullscreen-button:hover { color: #1e3a5f; }
         .exit-fullscreen-button { display: none; position: absolute; top: 20px; right: 20px; background-color: rgba(0,0,0,0.6); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; z-index: 1001; font-size: 1rem; }
         .content-area.fullscreen .exit-fullscreen-button { display: block; }
-        .slideshow-content { flex-grow: 1; display: grid; position: relative; max-width: 1200px; width: 100%; margin: 0 auto; }
         
-        /* [NOVA CORREÇÃO] Layout Responsivo no Modo TV */
+        /* [CORREÇÃO FINAL] Container Grid para sobreposição de slides */
+        .slideshow-content { flex-grow: 1; display: grid; position: relative; max-width: 1200px; width: 100%; margin: 0 auto; }
         .content-area.fullscreen .slideshow-content { 
             height: 100vh; 
             max-height: 100vh;
-            display: flex; 
-            flex-direction: column; 
-            justify-content: flex-start; 
-            align-content: stretch;
+            display: grid; /* Mantém o Grid para empilhar os slides */
             padding: 20px 0;
+            align-items: center; /* Centraliza verticalmente se sobrar espaço */
         }
 
         .panel-slide {
@@ -125,13 +123,14 @@
             display: flex; flex-direction: column; gap: 25px; width: 100%;
         }
         
-        /* [NOVA CORREÇÃO] O Slide ocupa a altura total no modo TV */
+        /* [CORREÇÃO FINAL] Estilo do slide ativo em tela cheia */
         .content-area.fullscreen .panel-slide {
             height: 100%;
-            max-height: 100%;
+            max-height: 95vh; /* Margem de segurança */
             display: flex;
             flex-direction: column;
-            box-shadow: none; /* Mais limpo em tela cheia */
+            box-shadow: none;
+            overflow: hidden; /* O slide não rola, só o calendário */
         }
 
         .panel-slide.active { opacity: 1; visibility: visible; }
@@ -149,12 +148,12 @@
         .calendars { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; padding: 10px; background: #f8fafd; border-radius: 8px;}
         #calendars-avance { max-height: 400px; overflow-y: auto; }
         
-        /* [NOVA CORREÇÃO] O calendário preenche o espaço restante no modo TV e rola SE necessário */
+        /* [CORREÇÃO FINAL] Rolagem apenas no calendário */
         .content-area.fullscreen .calendars {
             flex-grow: 1;
             max-height: none !important;
             overflow-y: auto;
-            padding-bottom: 20px;
+            padding-bottom: 50px;
         }
 
         .month { background-color: #fff; border-radius: 10px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
