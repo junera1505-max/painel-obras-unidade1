@@ -6,7 +6,7 @@
     <title>Sistema de Acompanhamento de Obras</title>
     
     <style>
-        /* CSS completo, sem alterações */
+        /* CSS completo - Ajustado para o modo TV */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         body, html { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; color: #333; height: 100%; overflow: hidden; background-color: #f4f7fa; }
         * { box-sizing: border-box; }
@@ -20,7 +20,10 @@
         #main-nav li a:hover { background-color: rgba(255, 255, 255, 0.1); color: white; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
         #main-nav li a.active { background-color: #ffffff; color: #1e3a5f; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transform: translateY(-2px); }
         .content-area { flex-grow: 1; padding: 40px; overflow-y: auto; background-color: #f4f7fa; transition: padding-left 0.3s ease-in-out; position: relative; }
-        .content-area.fullscreen { padding: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        
+        /* AJUSTE PARA TELA CHEIA (TV) */
+        .content-area.fullscreen { padding: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; background-color: #eef2f6; }
+        
         .content-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;}
         .content-header h1 { font-size: 2.2rem; color: #1e3a5f; margin: 0; }
         .content-header p { font-size: 1.1rem; color: #5a718c; margin: 0; }
@@ -102,7 +105,18 @@
         .exit-fullscreen-button { display: none; position: absolute; top: 20px; right: 20px; background-color: rgba(0,0,0,0.6); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; z-index: 1001; font-size: 1rem; }
         .content-area.fullscreen .exit-fullscreen-button { display: block; }
         .slideshow-content { flex-grow: 1; display: grid; position: relative; max-width: 1200px; width: 100%; margin: 0 auto; }
-        .content-area.fullscreen .slideshow-content { height: 100%; max-height: 90vh; display: grid; align-content: center; }
+        
+        /* [NOVA CORREÇÃO] Layout Responsivo no Modo TV */
+        .content-area.fullscreen .slideshow-content { 
+            height: 100vh; 
+            max-height: 100vh;
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-start; 
+            align-content: stretch;
+            padding: 20px 0;
+        }
+
         .panel-slide {
             grid-column-start: 1; grid-row-start: 1; opacity: 0; visibility: hidden;
             transition: opacity 0.7s ease-in-out, visibility 0.7s;
@@ -110,11 +124,21 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             display: flex; flex-direction: column; gap: 25px; width: 100%;
         }
+        
+        /* [NOVA CORREÇÃO] O Slide ocupa a altura total no modo TV */
+        .content-area.fullscreen .panel-slide {
+            height: 100%;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: none; /* Mais limpo em tela cheia */
+        }
+
         .panel-slide.active { opacity: 1; visibility: visible; }
         .panel-slide h2 { font-size: 2rem; color: #1e3a5f; margin: 0 0 20px 0; text-align: center; }
-        .panel-slide .progress-bar-container { height: 40px; border-radius: 20px; margin-bottom: 20px; }
+        .panel-slide .progress-bar-container { height: 40px; border-radius: 20px; margin-bottom: 20px; flex-shrink: 0; }
         .panel-slide .progress-bar-fill, .panel-slide .progress-bar-fill-sewage { border-radius: 20px; font-size: 1.1rem; font-weight: 700; }
-        .panel-slide .progress-details { font-size: 1.1rem; font-weight: 500; color: #5a718c; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .panel-slide .progress-details { font-size: 1.1rem; font-weight: 500; color: #5a718c; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; flex-shrink: 0; }
         .panel-slide .progress-details div { padding: 10px 0; border-radius: 8px; background-color: #f8fafd; text-align: center; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
         .panel-slide .progress-details span { font-weight: 700; color: #1e3a5f; display: block; font-size: 1.4rem; }
         .panel-slide .progress-details div .goal-surpassed { color: #28a745 !important; }
@@ -124,6 +148,15 @@
         .panel-slide .progress-details div:nth-child(4) span { color: #6f42c1; }
         .calendars { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; padding: 10px; background: #f8fafd; border-radius: 8px;}
         #calendars-avance { max-height: 400px; overflow-y: auto; }
+        
+        /* [NOVA CORREÇÃO] O calendário preenche o espaço restante no modo TV e rola SE necessário */
+        .content-area.fullscreen .calendars {
+            flex-grow: 1;
+            max-height: none !important;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
         .month { background-color: #fff; border-radius: 10px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .month h3 { text-align: center; font-size: 1.3rem; color: #1e3a5f; margin-bottom: 15px; }
         .calendar-grid { display: grid; grid-template-columns: 30px repeat(7, 1fr); gap: 5px; }
@@ -462,6 +495,7 @@
         function reiniciarTimerSlideshow() { clearInterval(slideshowInterval); slideshowInterval = setInterval(proximoSlide, 10000); }
         
         function mostrarPainelTV() { 
+            // [ALTERAÇÃO DATA] Atualizado para 2026 como solicitado
             const eI = new Date(Date.UTC(2026, 11, 15)), eE = new Date(Date.UTC(2026, 11, 31)), eA = new Date(Date.UTC(2026, 11, 31)); 
             const localToday = new Date(); 
             const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); 
