@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento de Obras - v13</title>
+    <title>Sistema de Acompanhamento de Obras - v14 (Planejamento)</title>
     
     <style>
         /* CSS completo - Ajuste FINAL para TV (Grid Overlay) */
@@ -217,6 +217,18 @@
             display: block;
         }
 
+        /* --- NOVOS ESTILOS: PLANEJAMENTO 2026 --- */
+        .planning-tabs { display: flex; gap: 5px; overflow-x: auto; border-bottom: 2px solid #e0e0e0; margin-bottom: 20px; padding-bottom: 5px; }
+        .planning-tab-btn { background: none; border: none; padding: 10px 20px; font-family: 'Poppins', sans-serif; font-size: 0.95rem; color: #5a718c; cursor: pointer; border-radius: 6px 6px 0 0; transition: all 0.2s; white-space: nowrap; }
+        .planning-tab-btn:hover { background-color: #f0f4f8; color: #1e3a5f; }
+        .planning-tab-btn.active { background-color: #1e3a5f; color: white; font-weight: 600; }
+        .planning-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
+        .planning-month-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eee; text-align: center; }
+        .planning-month-card h4 { margin: 0 0 10px 0; color: #1e3a5f; font-size: 0.9rem; text-transform: uppercase; }
+        .planning-month-card input { width: 100%; text-align: center; font-weight: 600; color: #007bff; border: 1px solid #ddd; padding: 5px; border-radius: 4px; }
+        .planning-summary { margin-top: 20px; padding: 15px; background-color: #e8f5e9; border-radius: 8px; color: #2e7d32; font-weight: 600; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+
         @media (max-width: 992px) {
             body, html {
                 overflow-y: auto; 
@@ -397,6 +409,9 @@
             navList.innerHTML += `<li><a data-id="painel-tv" title="Painel TV">📺 Painel TV</a></li>`; 
             navList.innerHTML += `<li><a data-id="visao-geral">Visão Geral</a></li>`; 
             navList.innerHTML += `<li><a data-id="comuniqueses">📄 Comunique-se</a></li>`; 
+            // --- INSERÇÃO PEDIDA ---
+            navList.innerHTML += `<li><a data-id="planejamento-2026">📅 Planejamento 2026</a></li>`;
+            // -----------------------
             
             navList.innerHTML += `<li><a data-id="metas-acumuladas">📊 Metas Acumuladas</a></li>`;
 
@@ -682,7 +697,7 @@
                 </div>
                 <div class="calendars" id="calendars-avance"></div>
             </div>`; 
-                            
+                                    
             const { renderAllCalendars } = setupCalendarLogic(H); 
             renderAllCalendars(today, eI, sC.querySelector('#calendars-imob')); 
             renderAllCalendars(today, eI, sC.querySelector('#calendars-costad')); // CostAD usa mesmo prazo financeiro 
@@ -1244,6 +1259,9 @@
             if (id === 'visao-geral') mostrarVisaoGeral(database.obras); 
             else if (id === 'painel-tv') mostrarPainelTV(); 
             else if (id === 'comuniqueses') mostrarPaginaComuniqueses(); 
+            // --- INSERÇÃO PEDIDA (Lógica) ---
+            else if (id === 'planejamento-2026') mostrarPlanejamento2026();
+            // --------------------------------
             else if (id === 'metas-acumuladas') mostrarMetasAcumuladas(database.obras);
             else if (id === 'lancar-historico') mostrarPaginaHistorico();
             else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); } 
@@ -1372,9 +1390,123 @@
             }
         });
 
+        // =========================================================================
+        // MÓDULO: PLANEJAMENTO 2026 (Injetado)
+        // =========================================================================
+
+        function mostrarPlanejamento2026(obraIdSelecionada = null) {
+            // Se não tiver obra selecionada, pega a primeira da lista
+            const obras = database.obras.sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto));
+            
+            if (obras.length === 0) {
+                contentArea.innerHTML = `<div class="content-header"><h1>Planejamento 2026</h1><p>Nenhum contrato cadastrado.</p></div>`;
+                return;
+            }
+
+            const obraAtiva = obraIdSelecionada ? obras.find(o => o.id === obraIdSelecionada) : obras[0];
+
+            // Garante que a estrutura de dados exista para essa obra
+            if (!obraAtiva.planejamento2026) {
+                obraAtiva.planejamento2026 = Array(12).fill(0); // Array de 12 meses zerados
+            }
+
+            // Gera o HTML das Abas (Tabs)
+            const tabsHtml = obras.map(o => `
+                <button class="planning-tab-btn ${o.id === obraAtiva.id ? 'active' : ''}" 
+                        onclick="mostrarPlanejamento2026('${o.id}')">
+                    ${o.nomeCurto}
+                </button>
+            `).join('');
+
+            const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            
+            // Gera os Cards dos Meses
+            let inputsHtml = '<div class="planning-grid">';
+            let totalPlanejado = 0;
+
+            meses.forEach((mes, index) => {
+                const valor = obraAtiva.planejamento2026[index] || 0;
+                totalPlanejado += valor;
+                const readOnly = !isAdmin ? 'readonly' : '';
+                
+                inputsHtml += `
+                    <div class="planning-month-card">
+                        <h4>${mes}</h4>
+                        <div class="input-wrapper">
+                            <input type="text" 
+                                value="${valor.toLocaleString('pt-BR')}" 
+                                data-obra-id="${obraAtiva.id}" 
+                                data-mes-index="${index}"
+                                onchange="handlePlanejamentoChange(this)"
+                                oninput="handleInputFormatting(event)"
+                                data-tipo="inteiro"
+                                ${readOnly}>
+                            <span style="font-size: 0.8rem; color: #888; display:block; margin-top:5px;">Economias</span>
+                        </div>
+                    </div>
+                `;
+            });
+            inputsHtml += '</div>';
+
+            // Resumo
+            const saldo = (obraAtiva.dadosEconomia.meta || 0) - totalPlanejado;
+            const statusClass = saldo < 0 ? 'prazo-vencido' : (saldo === 0 ? 'goal-surpassed' : '');
+            const statusTexto = saldo < 0 ? `Ultrapassou a Meta em ${Math.abs(saldo)}` : (saldo === 0 ? 'Planejamento Bate com a Meta!' : `Faltam planejar: ${saldo}`);
+
+            contentArea.innerHTML = `
+                <div class="content-header">
+                    <div>
+                        <h1>Planejamento de Entregas 2026</h1>
+                        <p>Distribuição mensal de economias por contrato.</p>
+                    </div>
+                </div>
+
+                <div class="planning-tabs">
+                    ${tabsHtml}
+                </div>
+
+                <div class="metric-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                        <h3>${obraAtiva.nomeCompleto}</h3>
+                        <div style="text-align:right;">
+                            <span style="display:block; font-size: 0.9rem; color:#666;">Meta Total do Contrato</span>
+                            <strong style="font-size: 1.2rem; color:#1e3a5f;">${(obraAtiva.dadosEconomia.meta || 0).toLocaleString('pt-BR')} un.</strong>
+                        </div>
+                    </div>
+
+                    ${inputsHtml}
+
+                    <div class="planning-summary">
+                        <span>Total Planejado (Soma dos Meses): ${totalPlanejado.toLocaleString('pt-BR')}</span>
+                        <span class="${statusClass}">${statusTexto}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Função para salvar as alterações do Planejamento
+        function handlePlanejamentoChange(input) {
+            if (!isAdmin) return;
+
+            const obraId = input.dataset.obraId;
+            const mesIndex = parseInt(input.dataset.mesIndex);
+            // Remove pontos de milhar para salvar
+            const valor = parseInt(input.value.replace(/\./g, '') || 0, 10);
+
+            const obra = database.obras.find(o => o.id === obraId);
+            if (obra) {
+                if (!obra.planejamento2026) obra.planejamento2026 = Array(12).fill(0);
+                obra.planejamento2026[mesIndex] = valor;
+                
+                // Salva e recarrega a tela para atualizar os totais
+                salvarDados();
+                // Pequeno delay visual
+                setTimeout(() => mostrarPlanejamento2026(obraId), 500); 
+            }
+        }
+
         carregarDados();
     });
     </script>
 </body>
 </html>
-
