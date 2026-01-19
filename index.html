@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v17 (Corrigido)</title>
+    <title>Sistema de Acompanhamento - v18 (Importação Excel)</title>
+    
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
     <style>
         /* CSS completo */
@@ -249,12 +251,10 @@
         const contentArea = document.getElementById('content-area');
         const sidebar = document.querySelector('.sidebar');
         
-        // --- FUNÇÃO MOVIDA PARA O ESCOPO CORRETO (CORREÇÃO DO ERRO) ---
         const handlePainelTVKeyPress = (event) => { 
             if (event.key === 'ArrowRight') proximoSlide(); 
             if (event.key === 'ArrowLeft') slideAnterior(); 
         };
-        // ----------------------------------------------------------------
 
         const formatCurrency = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const formatUnits = (v, u = '') => `${(Math.round(v) || 0).toLocaleString('pt-BR')} ${u}`.trim();
@@ -296,10 +296,6 @@
              contentArea.innerHTML = `<div class="slideshow-wrapper"><div class="slideshow-header"><h1>Painel TV</h1><button class="fullscreen-button" title="Modo Tela Cheia">📺</button></div><div class="slideshow-content"></div><button class="exit-fullscreen-button">Sair</button></div>`; const sC = contentArea.querySelector('.slideshow-content'); sC.innerHTML = `<div class="panel-slide"><h2>Meta Imobilização 2025</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tI, aI, 'currency')}</div><div>Executado: <span>${formatCurrency(aI)}</span></div><div>Meta 2025: <span>${formatCurrency(tI)}</span></div><div>Meta Diária: <span>${formatCurrency(dIT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-imob"></div></div>` + `<div class="panel-slide"><h2>CostAD (Desembolso)</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pC > 100 ? 100 : pC.toFixed(2)}%; background-color: #6f42c1;">${pC.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tC, aC, 'currency')}</div><div>Executado: <span>${formatCurrency(aC)}</span></div><div>Meta Total: <span>${formatCurrency(tC)}</span></div><div>Meta Diária: <span>${formatCurrency(dCT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-costad"></div></div>` + `<div class="panel-slide"><h2>Meta Economias 2026</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Faltam para Meta Global: <span>${formatUnits(tEMeta26)}</span></div><div>Alcançado: <span>${formatUnits(aE)}</span></div><div>Meta Global: <span>${formatUnits(GLOBAL_GOAL_ECONOMIAS)}</span></div><div>Meta Diária (Restante): <span>${formatUnits(dET)}</span></div><div>Dias Úteis: <span>${bDE}</span></div></div><div class="calendars" id="calendars-econ"></div></div>` + `<div class="panel-slide"><h2>Meta Avanço Físico 2026</h2><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Faltam para Meta Total: <span>${formatUnits(tAMeta26, 'm')}</span></div><div>Executado: <span>${formatUnits(aA, 'm')}</span></div><div>Meta Total: <span>${formatUnits(tAMetaTotal, 'm')}</span></div><div>Meta Diária (Restante): <span>${formatUnits(dAT, 'm')}</span></div><div>Dias Úteis: <span>${bDA}</span></div></div><div class="calendars" id="calendars-avance"></div></div>`; const { renderAllCalendars } = setupCalendarLogic(H); renderAllCalendars(today, eI, sC.querySelector('#calendars-imob')); renderAllCalendars(today, eI, sC.querySelector('#calendars-costad')); renderAllCalendars(today, eE, sC.querySelector('#calendars-econ')); renderAllCalendars(today, eA, sC.querySelector('#calendars-avance')); slides = sC.querySelectorAll('.panel-slide'); currentSlide = 0; if (slides.length > 0) { slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); } document.querySelector('.fullscreen-button').addEventListener('click', enterFullScreenMode); document.querySelector('.exit-fullscreen-button').addEventListener('click', exitFullScreenMode); document.addEventListener('keydown', handlePainelTVKeyPress); 
         }
         function setupCalendarLogic(h) { const holidaySet = new Set(h); function rM(y, m, gC, tED) { const localToday = new Date(); const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const fD = new Date(y, m, 1), dIM = new Date(y, m + 1, 0).getDate(), sDOW = fD.getDay(); let gCs = []; gCs.push('<div class="week-number-header"></div>'); ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].forEach(n => gCs.push(`<div class="day-name">${n}</div>`)); for (let i = 0; i < sDOW; i++) gCs.push('<div class="empty-day"></div>'); for (let d = 1; d <= dIM; d++) { const cD = new Date(Date.UTC(y, m, d)); const cDOW = cD.getUTCDay(); if (cDOW === 0) gCs.push(`<div class="week-number">${gWN(cD)}</div>`); let cls = ['day']; if (cD.getTime() === today.getTime()) { cls.push('today'); } else if (cD < today) { cls.push('past-day'); } if (cD.getTime() === tED.getTime()) { cls.push('end-date'); } else if (cD > today && cD <= tED) { const iso = cD.toISOString().split('T')[0]; if (holidaySet.has(iso)) cls.push('holiday'); else if (cDOW === 0 || cDOW === 6) cls.push('weekend'); else cls.push('future-workday'); } gCs.push(`<div class="${cls.join(' ')}"><span class="day-of-month">${d}</span></div>`); } gC.innerHTML = gCs.join(''); } function gWN(d) { d = new Date(d); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); const yS = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); const wN = Math.ceil((((d - yS) / 864e5) + 1) / 7); return wN; } return { renderAllCalendars: function (s, e, c) { if (!c) return; c.innerHTML = ''; const mN = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]; let cD = new Date(s.getUTCFullYear(), s.getUTCMonth(), 1); while (cD <= e) { const y = cD.getFullYear(), m = cD.getMonth(); const mC = document.createElement('div'); mC.className = 'month'; mC.innerHTML = `<h3>${mN[m]} ${y}</h3><div class="calendar-grid"></div>`; const cG = mC.querySelector('.calendar-grid'); rM(y, m, cG, e); c.appendChild(mC); cD.setMonth(cD.getMonth() + 1); } } }; }
-        function mostrarPaginaObra(o){
-             if (!o.dadosCostAD) o.dadosCostAD = { meta: 0, atual: 0 }; const pI = calculatePercentage(o.dadosImobilizacao.atual, o.dadosImobilizacao.meta); const pC = calculatePercentage(o.dadosCostAD.atual, o.dadosCostAD.meta); const pE = calculatePercentage(o.dadosEconomia.atual, o.dadosEconomia.meta); const pA = calculatePercentage(o.dadosAvanceFisico.atual, o.dadosAvanceFisico.meta); const vIf = (o.dadosImobilizacao.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); const vCf = (o.dadosCostAD.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); const readOnlyState = !isAdmin ? 'readonly' : ''; const adminOnlyDisplay = !isAdmin ? 'style="display:none;"' : ''; const restanteEcon = o.dadosEconomia.meta - o.dadosEconomia.atual; const restanteAvance = o.dadosAvanceFisico.meta - o.dadosAvanceFisico.atual;
-             contentArea.innerHTML = `<div class="content-header"><div><h1>${o.nomeCompleto}</h1><p>Acompanhamento detalhado.</p></div></div><div class="dashboard-grid"><section class="metric-card progress-card"><h3>Meta Imobilização 2025</h3><div class="input-area"><label for="input-imob">Valor Realizado:</label><div class="input-wrapper"><span class="currency-symbol">R$</span><input type="text" id="input-imob" data-obra-id="${o.id}" data-tipo="imobilizacao" value="${vIf}" ${readOnlyState}></div></div><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosImobilizacao.meta, o.dadosImobilizacao.atual, 'currency')}</div><div>Meta: <span>${formatCurrency(o.dadosImobilizacao.meta)}</span></div></div></section><section class="metric-card progress-card"><h3>CostAD (Desembolso)</h3><div class="input-area"><label for="input-costad">Valor Realizado:</label><div class="input-wrapper"><span class="currency-symbol">R$</span><input type="text" id="input-costad" data-obra-id="${o.id}" data-tipo="costad" value="${vCf}" ${readOnlyState}></div></div><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pC > 100 ? 100 : pC.toFixed(2)}%; background-color: #6f42c1;">${pC.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosCostAD.meta, o.dadosCostAD.atual, 'currency')}</div><div>Meta: <span>${formatCurrency(o.dadosCostAD.meta)}</span></div></div></section><section class="metric-card progress-card"><h3>Economias</h3><div class="input-area"><label for="input-econ">Economias Atendidas:</label><div class="input-wrapper"><input type="text" id="input-econ" class="no-symbol" data-obra-id="${o.id}" data-tipo="economia" value="${(o.dadosEconomia.atual || 0).toLocaleString('pt-BR')}" ${readOnlyState}></div></div><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosEconomia.meta, o.dadosEconomia.atual, 'units', 'economias')}</div><div>Meta Total: <span>${formatUnits(o.dadosEconomia.meta)}</span></div><div>Meta 2026 (Restante): <span>${formatUnits(restanteEcon < 0 ? 0 : restanteEcon)}</span></div></div></section><section class="metric-card progress-card"><h3>Avanço Físico (m)</h3><div class="input-area"><label for="input-avance">Metros Executados:</label><div class="input-wrapper"><input type="text" id="input-avance" class="no-symbol" data-obra-id="${o.id}" data-tipo="avance" value="${(o.dadosAvanceFisico.atual || 0).toLocaleString('pt-BR')}" ${readOnlyState}></div></div><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosAvanceFisico.meta, o.dadosAvanceFisico.atual, 'units', 'm')}</div><div>Meta Total: <span>${formatUnits(o.dadosAvanceFisico.meta, 'm')}</span></div><div>Meta 2026 (Restante): <span>${formatUnits(restanteAvance < 0 ? 0 : restanteAvance, 'm')}</span></div></div></section><section class="metric-card danger-zone" ${adminOnlyDisplay}><h3>Zona de Perigo</h3><p>A exclusão de um contrato é permanente.</p><button id="btn-excluir-contrato" data-obra-id="${o.id}">Excluir Contrato</button></section></div>`; if (isAdmin) { contentArea.querySelectorAll('input[type="text"]').forEach(i => { i.addEventListener('input', handleInputFormatting); i.addEventListener('change', handleInputChange); }); const btnExcluir = document.getElementById('btn-excluir-contrato'); if (btnExcluir) { btnExcluir.addEventListener('click', handleExcluirClick); } }
-        }
 
         // =========================================================================
         // GLOBALS E CORREÇÕES (v15 e v16)
@@ -361,8 +357,20 @@
             const statusClass = saldo < 0 ? 'prazo-vencido' : (saldo === 0 ? 'goal-surpassed' : '');
             const statusTexto = saldo < 0 ? `Ultrapassou a Meta em ${Math.abs(saldo)}` : (saldo === 0 ? 'Planejamento Bate com a Meta!' : `Faltam planejar: ${saldo}`);
 
+            // Botão de Importação (Visível apenas para Admin)
+            const adminButton = isAdmin ? 
+                `<button onclick="triggerImportacaoExcel()" class="btn-primary" style="background-color: #28a745; margin-left: 20px;">📂 Importar Excel</button>` : '';
+
             contentArea.innerHTML = `
-                <div class="content-header"><div><h1>Planejamento de Entregas 2026</h1><p>Clique no mês para detalhar as sub-obras.</p></div></div>
+                <div class="content-header">
+                    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h1>Planejamento de Entregas 2026</h1>
+                            <p>Clique no mês para detalhar as sub-obras.</p>
+                        </div>
+                        ${adminButton}
+                    </div>
+                </div>
                 <div class="planning-tabs">${tabsHtml}</div>
                 <div class="metric-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
@@ -449,6 +457,122 @@
         function obterNomeMes(i) { return ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"][i]; }
 
         // -------------------------------------------------------------------------
+        
+        // ==========================================
+        // MÓDULO DE IMPORTAÇÃO DE EXCEL (NOVO v18)
+        // ==========================================
+        window.triggerImportacaoExcel = function() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx, .xls, .csv';
+            input.onchange = e => window.processarImportacaoExcel(e.target.files[0]);
+            input.click();
+        }
+
+        window.processarImportacaoExcel = function(file) {
+            if (!file) return;
+
+            if (!isAdmin) {
+                alert("Apenas administradores podem importar dados.");
+                return;
+            }
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (jsonData.length > 0) jsonData.shift(); // Remove cabeçalho
+
+                    let importadosCount = 0;
+                    let erros = [];
+                    const obrasAfetadas = new Set();
+
+                    console.log("Iniciando processamento de " + jsonData.length + " linhas...");
+
+                    jsonData.forEach((row, index) => {
+                        // A: Contrato, B: Local, C: Data, D: Qtd
+                        const contratoNome = row[0]; 
+                        const nomeLocal = row[1];    
+                        const dataRaw = row[2];      
+                        const qtd = parseInt(row[3]) || 0;
+
+                        if (!contratoNome || !dataRaw) return;
+
+                        const obra = database.obras.find(o => 
+                            o.nomeCurto.trim().toLowerCase() === contratoNome.toString().trim().toLowerCase()
+                        );
+
+                        if (!obra) {
+                            erros.push(`Linha ${index + 2}: Contrato "${contratoNome}" não encontrado.`);
+                            return;
+                        }
+
+                        let dataObj;
+                        if (dataRaw instanceof Date) {
+                            dataObj = dataRaw;
+                        } else {
+                            const parts = String(dataRaw).split('/');
+                            if (parts.length === 3) dataObj = new Date(parts[2], parts[1] - 1, parts[0]);
+                        }
+
+                        if (!dataObj || isNaN(dataObj.getTime())) {
+                            erros.push(`Linha ${index + 2}: Data inválida para "${nomeLocal}".`);
+                            return;
+                        }
+
+                        const mesIndex = dataObj.getMonth();
+
+                        if (!obra.planejamentoDetalhes) obra.planejamentoDetalhes = {};
+                        if (!obra.planejamentoDetalhes[mesIndex]) obra.planejamentoDetalhes[mesIndex] = [];
+
+                        obra.planejamentoDetalhes[mesIndex].push({
+                            nome: nomeLocal || 'Importado Excel',
+                            valor: qtd
+                        });
+
+                        // Recalcular Total Mes
+                        const totalMes = obra.planejamentoDetalhes[mesIndex].reduce((acc, item) => acc + (item.valor || 0), 0);
+                        if (!obra.planejamento2026) obra.planejamento2026 = Array(12).fill(0);
+                        obra.planejamento2026[mesIndex] = totalMes;
+
+                        importadosCount++;
+                        obrasAfetadas.add(obra.id);
+                    });
+
+                    let msg = `Processamento concluído!\n${importadosCount} registros importados com sucesso.`;
+                    if (erros.length > 0) {
+                        msg += `\n\nErros (${erros.length}):\n` + erros.slice(0, 5).join('\n') + (erros.length > 5 ? '\n...' : '');
+                    }
+                    alert(msg);
+
+                    if (importadosCount > 0) {
+                        salvarDados(true);
+                        // Se estivermos na tela de planejamento, recarregar a obra atual se ela foi afetada
+                        // Se não, mostrar a primeira obra afetada
+                        if(obrasAfetadas.size > 0) {
+                           const firstObra = obrasAfetadas.values().next().value;
+                           window.mostrarPlanejamento2026(firstObra);
+                        } else {
+                           window.mostrarPlanejamento2026();
+                        }
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    alert("Erro ao ler o arquivo. Verifique se é um Excel válido (.xlsx).");
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        // =========================================================================
 
         function handleExcluirClick(e) { const oId = e.target.dataset.obraId; const o = database.obras.find(x => x.id === oId); if (!o) return; if (confirm(`Excluir "${o.nomeCompleto}"?\nAção permanente.`)) { const idx = database.obras.findIndex(x => x.id === oId); if (idx > -1) { database.obras.splice(idx, 1); salvarDados(true); gerarNavegacao(database.obras); navList.querySelector('a[data-id="visao-geral"]').click(); } } }
         
@@ -485,9 +609,6 @@
         overlayEl.addEventListener('click', closeSidebar);
         navList.addEventListener('click', (e) => { if (e.target.tagName === 'A' && window.innerWidth <= 992) { closeSidebar(); } });
 
-        // ... (Funções de Histórico e Carregar Dados permanecem iguais) ...
-        // Mantive a estrutura original abaixo para garantir que nada foi perdido.
-        
         function calcularHistoricoAgregado(obras) { const agregados = { Imobilização: {}, Economia: {}, Avanço: {}, CostAD: {} }; const tipos = [ { key: 'dadosImobilizacao', nome: 'Imobilização' }, { key: 'dadosEconomia', nome: 'Economia' }, { key: 'dadosAvanceFisico', nome: 'Avanço' }, { key: 'dadosCostAD', nome: 'CostAD' } ]; for (const obra of obras) { for (const tipo of tipos) { const hist = obra[tipo.key]?.historico; if (hist && hist.length > 0) { for (const item of hist) { const { mes, meta, realizado } = item; if (!agregados[tipo.nome][mes]) { agregados[tipo.nome][mes] = { mes: mes, meta: 0, realizado: 0 }; } agregados[tipo.nome][mes].meta += meta || 0; agregados[tipo.nome][mes].realizado += realizado || 0; } } } } const obraEml2 = { id: 'coord-eml-2', nomeCurto: 'Coordenação EML 2', nomeCompleto: 'Coordenação EML 2', dadosImobilizacao: { historico: Object.values(agregados.Imobilização) }, dadosEconomia: { historico: Object.values(agregados.Economia) }, dadosAvanceFisico: { historico: Object.values(agregados.Avanço) }, dadosCostAD: { historico: Object.values(agregados.CostAD) } }; return obraEml2; }
         function mostrarMetasAcumuladas(obras) { contentArea.innerHTML = `<div class="content-header"><div><h1>Metas Acumuladas</h1><p>Histórico mensal de todos os contratos.</p></div><button id="btn-export-csv" class="btn-primary" style="background-color: #28a745;">📊 Exportar CSV</button></div><div class="dashboard-grid" id="container-metas-acumuladas"></div>`; const container = document.getElementById('container-metas-acumuladas'); if (!container) return; const obraEml2 = calcularHistoricoAgregado(obras); const todasAsObras = [obraEml2, ...obras]; const ordemDosCards = ["Coordenação EML 2", "1B1", "1A2", "1B2", "1A1", "6A", "17B", "17A"]; const ordemMap = new Map(ordemDosCards.map((nome, index) => [nome, index])); const getSortIndex = (obra) => { if (obra.nomeCurto === "Coordenação EML 2") return 0; const sufixo = obra.nomeCurto.split(' ').pop(); return ordemMap.has(sufixo) ? ordemMap.get(sufixo) : Infinity; }; const obrasOrdenadas = todasAsObras.sort((a, b) => { const indexA = getSortIndex(a); const indexB = getSortIndex(b); if (indexA === Infinity && indexB === Infinity) return a.nomeCurto.localeCompare(b.nomeCurto); return indexA - indexB; }); if (obrasOrdenadas.length === 0) { container.innerHTML = '<p>Nenhum contrato cadastrado.</p>'; return; } for (const obra of obrasOrdenadas) { const card = document.createElement('section'); card.className = 'metric-card progress-card'; const histImob = obra.dadosImobilizacao?.historico; const histEcon = obra.dadosEconomia?.historico; const histAvanc = obra.dadosAvanceFisico?.historico; const histCostAD = obra.dadosCostAD?.historico; card.innerHTML = `<h3>${obra.nomeCompleto || obra.nomeCurto}</h3><h4 style="margin-top: 15px; margin-bottom: 10px;">Histórico de Imobilização (R$)</h4>${renderizarHistoricoTabela(histImob, 'currency')}<h4 style="margin-top: 20px; margin-bottom: 10px;">Histórico CostAD (R$)</h4>${renderizarHistoricoTabela(histCostAD, 'currency')}<h4 style="margin-top: 20px; margin-bottom: 10px;">Histórico de Economias (Un.)</h4>${renderizarHistoricoTabela(histEcon, 'units')}<h4 style="margin-top: 20px; margin-bottom: 10px;">Histórico de Avanço Físico (m)</h4>${renderizarHistoricoTabela(histAvanc, 'units')}`; container.appendChild(card); } document.getElementById('btn-export-csv').addEventListener('click', () => exportarParaCSV(obrasOrdenadas)); }
         function renderizarHistoricoTabela(historico, tipoValor) { if (!historico || historico.length === 0) { return '<p style="font-size: 0.9rem; color: #6c757d; margin: 0;">Nenhum histórico lançado para este item.</p>'; } const formatFn = (tipoValor === 'currency') ? formatCurrency : formatUnits; const historicoOrdenado = [...historico].sort((a, b) => a.mes.localeCompare(b.mes)); let totalMeta = 0; let totalRealizado = 0; let tabelaHtml = `<div class="cs-table-wrapper" style="max-height: 300px; overflow-y: auto;"><table class="cs-table" style="min-width: 0; white-space: nowrap;"><thead><tr><th>Mês/Ano</th><th>Meta</th><th>Realizado</th><th>Diferença</th></tr></thead><tbody>`; for (const item of historicoOrdenado) { const meta = item.meta || 0; const realizado = item.realizado || 0; const diff = realizado - meta; totalMeta += meta; totalRealizado += realizado; let diffClass = ''; if (diff > 0) diffClass = 'goal-surpassed'; if (diff < 0) diffClass = 'prazo-vencido'; tabelaHtml += `<tr><td>${item.mes.replace('-', '/')}</td><td>${formatFn(meta)}</td><td>${formatFn(realizado)}</td><td style="font-weight: 600;" class="${diffClass}">${formatFn(diff)}</td></tr>`; } const totalDiff = totalRealizado - totalMeta; let diffClassTotal = ''; if (totalDiff > 0) diffClassTotal = 'goal-surpassed'; if (totalDiff < 0) diffClassTotal = 'prazo-vencido'; tabelaHtml += `<tr style="background-color: #f8faff; border-top: 2px solid #dbe3f0;"><td style="font-weight: 700;">Total</td><td style="font-weight: 700;">${formatFn(totalMeta)}</td><td style="font-weight: 700;">${formatFn(totalRealizado)}</td><td style="font-weight: 700;" class="${diffClassTotal}">${formatFn(totalDiff)}</td></tr>`; tabelaHtml += `</tbody></table></div>`; return tabelaHtml; }
