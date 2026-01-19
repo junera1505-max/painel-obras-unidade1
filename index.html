@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v19 (Importação mmm/aaaa)</title>
+    <title>Sistema de Acompanhamento - v20 (Metas Corrigidas)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
@@ -323,7 +323,14 @@
             
             // Inicializar estruturas
             if (!obraAtiva.planejamento2026) obraAtiva.planejamento2026 = Array(12).fill(0);
-            if (!obraAtiva.planejamentoDetalhes) obraAtiva.planejamentoDetalhes = {}; // v16: Detalhes
+            if (!obraAtiva.planejamentoDetalhes) obraAtiva.planejamentoDetalhes = {}; 
+
+            // ==========================================
+            // LOGICA CORRIGIDA (v20): Meta 2026 = Global - 2025
+            // ==========================================
+            const metaGlobal = obraAtiva.dadosEconomia.meta || 0;
+            const realizado2025 = obraAtiva.dadosEconomia.realizado2025 || 0;
+            const meta2026 = metaGlobal - realizado2025;
 
             const tabsHtml = obras.map(o => `
                 <button class="planning-tab-btn ${o.id === obraAtiva.id ? 'active' : ''}" 
@@ -353,9 +360,11 @@
                 `;
             });
             inputsHtml += '</div>';
-            const saldo = (obraAtiva.dadosEconomia.meta || 0) - totalPlanejado;
+            
+            // O SALDO AGORA É CONTRA A META DE 2026, NÃO A GLOBAL
+            const saldo = meta2026 - totalPlanejado;
             const statusClass = saldo < 0 ? 'prazo-vencido' : (saldo === 0 ? 'goal-surpassed' : '');
-            const statusTexto = saldo < 0 ? `Ultrapassou a Meta em ${Math.abs(saldo)}` : (saldo === 0 ? 'Planejamento Bate com a Meta!' : `Faltam planejar: ${saldo}`);
+            const statusTexto = saldo < 0 ? `Ultrapassou a Meta 2026 em ${Math.abs(saldo)}` : (saldo === 0 ? 'Planejamento Bate com a Meta 2026!' : `Faltam planejar para 2026: ${saldo}`);
 
             // Botão de Importação (Visível apenas para Admin)
             const adminButton = isAdmin ? 
@@ -373,9 +382,13 @@
                 </div>
                 <div class="planning-tabs">${tabsHtml}</div>
                 <div class="metric-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap: wrap; gap: 20px;">
                         <h3>${obraAtiva.nomeCompleto}</h3>
-                        <div style="text-align:right;"><span style="display:block; font-size: 0.9rem; color:#666;">Meta Total do Contrato</span><strong style="font-size: 1.2rem; color:#1e3a5f;">${(obraAtiva.dadosEconomia.meta || 0).toLocaleString('pt-BR')} un.</strong></div>
+                        <div style="text-align:right; display:flex; gap: 15px;">
+                            <div><span style="display:block; font-size: 0.8rem; color:#666;">Meta Global (Total)</span><strong style="font-size: 1rem; color:#5a718c;">${metaGlobal.toLocaleString('pt-BR')} un.</strong></div>
+                            <div><span style="display:block; font-size: 0.8rem; color:#666;">(-) Executado 2025</span><strong style="font-size: 1rem; color:#c82333;">${realizado2025.toLocaleString('pt-BR')} un.</strong></div>
+                            <div style="border-left: 2px solid #eee; padding-left: 15px;"><span style="display:block; font-size: 0.9rem; color:#1e3a5f; font-weight:700;">(=) Meta 2026</span><strong style="font-size: 1.4rem; color:#1e3a5f;">${meta2026.toLocaleString('pt-BR')} un.</strong></div>
+                        </div>
                     </div>
                     ${inputsHtml}
                     <div class="planning-summary"><span>Total Planejado (Soma dos Meses): ${totalPlanejado.toLocaleString('pt-BR')}</span><span class="${statusClass}">${statusTexto}</span></div>
@@ -639,7 +652,71 @@
         function gerarTextoHistorico(obras) { let output = []; const tipos = [ { key: 'dadosImobilizacao', nome: 'Imobilização' }, { key: 'dadosCostAD', nome: 'CostAD' }, { key: 'dadosEconomia', nome: 'Economia' }, { key: 'dadosAvanceFisico', nome: 'Avanço' } ]; const ordemDosCards = ["1B1", "1A2", "1B2", "1A1", "6A", "17B", "17A"]; const ordemMap = new Map(ordemDosCards.map((nome, index) => [nome, index])); const getSortIndex = (obra) => { const sufixo = obra.nomeCurto.split(' ').pop(); return ordemMap.has(sufixo) ? ordemMap.get(sufixo) : Infinity; }; const obrasOrdenadas = [...obras].sort((a, b) => { const indexA = getSortIndex(a); const indexB = getSortIndex(b); if (indexA === Infinity && indexB === Infinity) { return a.nomeCurto.localeCompare(b.nomeCurto); } return indexA - indexB; }); for (const obra of obrasOrdenadas) { output.push(`\n# ${obra.nomeCurto}`); let hasEntries = false; for (const tipo of tipos) { const dados = obra[tipo.key]; if (dados && dados.historico && dados.historico.length > 0) { dados.historico.sort((a,b) => a.mes.localeCompare(b.mes)); for (const item of dados.historico) { output.push(`${tipo.nome}, ${item.mes}, ${item.meta || 0}, ${item.realizado || 0}`); hasEntries = true; } } } if (!hasEntries) output.push(`(Nenhum histórico lançado)`); } return output.join('\n').trim(); }
         function handleSalvarHistorico() { const text = document.getElementById('historico-textarea').value; const lines = text.split('\n'); let currentObra = null; if (!confirm("Tem certeza que deseja salvar? Isso irá sobrescrever o histórico existente.")) { return; } for (const obra of database.obras) { if (obra.dadosImobilizacao) obra.dadosImobilizacao.historico = []; if (obra.dadosEconomia) obra.dadosEconomia.historico = []; if (obra.dadosAvanceFisico) obra.dadosAvanceFisico.historico = []; if (!obra.dadosCostAD) obra.dadosCostAD = {}; obra.dadosCostAD.historico = []; } for (const line of lines) { const trimmedLine = line.trim(); if (trimmedLine.startsWith('#')) { const nomeCurto = trimmedLine.substring(1).trim(); currentObra = database.obras.find(o => o.nomeCurto === nomeCurto); if (!currentObra) console.warn(`Obra não encontrada: ${nomeCurto}`); continue; } if (!currentObra || trimmedLine === "" || trimmedLine.startsWith('(')) { continue; } const parts = trimmedLine.split(',').map(s => s.trim()); if (parts.length !== 4) { console.warn(`Linha mal formatada: ${trimmedLine}`); continue; } const [tipo, mes, metaStr, realizadoStr] = parts; const meta = parseFloat(metaStr) || 0; const realizado = parseFloat(realizadoStr) || 0; if (!/^\d{4}-\d{2}$/.test(mes)) { console.warn(`Formato de mês inválido: ${mes}. Use YYYY-MM.`); continue; } const newItem = { mes, meta, realizado }; let targetArray = null; if (tipo.toLowerCase().startsWith('imobil')) { if (!currentObra.dadosImobilizacao) currentObra.dadosImobilizacao = {}; if (!currentObra.dadosImobilizacao.historico) currentObra.dadosImobilizacao.historico = []; targetArray = currentObra.dadosImobilizacao.historico; } else if (tipo.toLowerCase().startsWith('econ')) { if (!currentObra.dadosEconomia) currentObra.dadosEconomia = {}; if (!currentObra.dadosEconomia.historico) currentObra.dadosEconomia.historico = []; targetArray = currentObra.dadosEconomia.historico; } else if (tipo.toLowerCase().startsWith('avan')) { if (!currentObra.dadosAvanceFisico) currentObra.dadosAvanceFisico = {}; if (!currentObra.dadosAvanceFisico.historico) currentObra.dadosAvanceFisico.historico = []; targetArray = currentObra.dadosAvanceFisico.historico; } else if (tipo.toLowerCase().startsWith('cost')) { if (!currentObra.dadosCostAD) currentObra.dadosCostAD = {}; if (!currentObra.dadosCostAD.historico) currentObra.dadosCostAD.historico = []; targetArray = currentObra.dadosCostAD.historico; } else { console.warn(`Tipo desconhecido: ${tipo}`); continue; } targetArray.push(newItem); } console.log("Database atualizado com histórico:", database); alert("Histórico processado. Salvando no banco..."); salvarDados(true); }
         function mostrarPaginaHistorico() { if (!isAdmin) { contentArea.innerHTML = `<div class="content-header"><h1>Acesso Negado</h1><p>Esta área é restrita.</p></div>`; return; } let currentText = gerarTextoHistorico(database.obras); contentArea.innerHTML = `<div class="content-header"><div><h1>Lançar Histórico Mensal</h1><p>Use o formato abaixo. O salvamento <strong>sobrescreve todo</strong> o histórico anterior.</p></div></div><div class="metric-card"><h3>Instruções</h3><ul style="font-size: 0.9rem;"><li>Linhas com <code># Nome do Contrato</code> definem qual contrato os dados abaixo pertencem. (Ex: <code># Pacote 17A</code>)</li><li>Linhas de dados devem ter o formato: <code>TIPO, YYYY-MM, META, REALIZADO</code></li><li><strong>Tipos válidos:</strong> <code>Imobilização</code>, <code>Economia</code>, <code>Avanço</code>, <code>CostAD</code>.</li><li><strong>Exemplo:</strong> <code>CostAD, 2025-03, 10000, 12000</code></li></ul><textarea id="historico-textarea" style="width: 100%; height: 50vh; font-family: 'Courier New', Courier, monospace; font-size: 14px; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">${currentText}</textarea><div style="text-align: right; margin-top: 20px;"><button id="btn-salvar-historico" class="btn-primary" style="background-color: #c82333;">Salvar e Sobrescrever Histórico</button></div></div>`; document.getElementById('btn-salvar-historico').addEventListener('click', handleSalvarHistorico); }
-        async function carregarDados() { try { const r = await fetch(JSONBIN_URL, { headers: { 'X-Master-Key': API_KEY } }); if (!r.ok) throw new Error(`Falha na rede: ${r.status}`); const d = await r.json(); database = d.record; if (!database.obras) database.obras = []; if (!database.comuniqueses) database.comuniqueses = []; database.obras.forEach(o => { if (!o.dadosCostAD) o.dadosCostAD = { meta: 0, atual: 0, historico: [] }; }); gerarNavegacao(database.obras); const linkAtivo = navList.querySelector('a.active'); if (linkAtivo) { linkAtivo.click(); } else { mostrarPainelTV(); } } catch (e) { console.error("Erro fatal:", e); contentArea.innerHTML = `<div class="content-header"><div><h1>Erro ao Carregar Dados</h1><p>Não foi possível conectar. Verifique URL/Chave e conexão. Detalhes: ${e.message}</p></div></div>`; } }
+        
+        // ==========================================
+        // MÓDULO DE CORREÇÃO AUTOMÁTICA DE METAS (v20)
+        // ==========================================
+        function aplicarCorrecaoMetas2025_2026() {
+            // Dados fornecidos pelo usuário para correção (r25 = Realizado 2025, m26 = Meta 2026 Restante)
+            const DATA_CORRECTION = [
+                { key: '1B1', r25: 7565, m26: 16508 },
+                { key: '1A2', r25: 16175, m26: 2300 },
+                { key: '1B2', r25: 11750, m26: 17759 },
+                { key: '1A1', r25: 5581, m26: 19273 },
+                { key: '6A',  r25: 17076, m26: 26047 },
+                { key: '17B', r25: 2076, m26: 3327 },
+                { key: '17A', r25: 700, m26: 1885 }
+            ];
+
+            let mudou = false;
+
+            DATA_CORRECTION.forEach(d => {
+                // Tenta encontrar a obra pelo nome (ex: "Pacote 1B1" contém "1B1")
+                const obra = database.obras.find(o => o.nomeCurto.toUpperCase().includes(d.key));
+                
+                if (obra) {
+                    // Meta Global = Realizado 2025 + O que falta em 2026
+                    const novaMetaGlobal = d.r25 + d.m26;
+
+                    // Se a meta ou o realizado armazenado estiverem diferentes, atualiza
+                    if (obra.dadosEconomia.meta !== novaMetaGlobal || obra.dadosEconomia.realizado2025 !== d.r25) {
+                        console.log(`Corrigindo dados para ${obra.nomeCurto}: MetaGlobal ${novaMetaGlobal}, Realizado25 ${d.r25}`);
+                        obra.dadosEconomia.meta = novaMetaGlobal;
+                        obra.dadosEconomia.realizado2025 = d.r25; // Salva o realizado de 2025 no objeto
+                        mudou = true;
+                    }
+                }
+            });
+
+            // Se houve alteração, salva no servidor
+            if (mudou && isAdmin) {
+                console.log("Correções aplicadas. Salvando dados...");
+                salvarDados();
+            }
+        }
+
+        async function carregarDados() { 
+            try { 
+                const r = await fetch(JSONBIN_URL, { headers: { 'X-Master-Key': API_KEY } }); 
+                if (!r.ok) throw new Error(`Falha na rede: ${r.status}`); 
+                const d = await r.json(); 
+                database = d.record; 
+                if (!database.obras) database.obras = []; 
+                if (!database.comuniqueses) database.comuniqueses = []; 
+                database.obras.forEach(o => { if (!o.dadosCostAD) o.dadosCostAD = { meta: 0, atual: 0, historico: [] }; }); 
+                
+                // APLICA A CORREÇÃO LOGO APÓS CARREGAR
+                aplicarCorrecaoMetas2025_2026();
+
+                gerarNavegacao(database.obras); 
+                const linkAtivo = navList.querySelector('a.active'); 
+                if (linkAtivo) { linkAtivo.click(); } else { mostrarPainelTV(); } 
+            } catch (e) { 
+                console.error("Erro fatal:", e); 
+                contentArea.innerHTML = `<div class="content-header"><div><h1>Erro ao Carregar Dados</h1><p>Não foi possível conectar. Verifique URL/Chave e conexão. Detalhes: ${e.message}</p></div></div>`; 
+            } 
+        }
+
         let saveTimeout;
         function salvarDados(fU = false) { if (!isAdmin) { console.warn("Modo de leitura. Salvamento bloqueado."); return; } clearTimeout(saveTimeout); saveTimeout = setTimeout(async () => { console.log("Salvando..."); try { const r = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY }, body: JSON.stringify(database) }); if (!r.ok) throw new Error('Falha ao salvar.'); console.log("Salvo!"); if (fU) { const aL = navList.querySelector('a.active'); if (aL) aL.click(); } } catch (e) { console.error("Erro ao salvar:", e); alert("Não foi possível salvar."); } }, 1500); }
         function handleNavClick(e) { 
