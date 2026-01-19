@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v18 (Importação Excel)</title>
+    <title>Sistema de Acompanhamento - v19 (Importação mmm/aaaa)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
@@ -459,7 +459,7 @@
         // -------------------------------------------------------------------------
         
         // ==========================================
-        // MÓDULO DE IMPORTAÇÃO DE EXCEL (NOVO v18)
+        // MÓDULO DE IMPORTAÇÃO DE EXCEL (ATUALIZADO v19)
         // ==========================================
         window.triggerImportacaoExcel = function() {
             const input = document.createElement('input');
@@ -513,18 +513,42 @@
                             return;
                         }
 
+                        // --- PARSER INTELIGENTE DE DATAS (NOVO) ---
                         let dataObj;
+                        
+                        // CASO 1: O Excel mandou um objeto de Data real
                         if (dataRaw instanceof Date) {
                             dataObj = dataRaw;
-                        } else {
-                            const parts = String(dataRaw).split('/');
-                            if (parts.length === 3) dataObj = new Date(parts[2], parts[1] - 1, parts[0]);
+                        } 
+                        // CASO 2: O Excel mandou texto (String)
+                        else {
+                            const stringData = String(dataRaw).toLowerCase().trim();
+                            const partes = stringData.split('/'); // Tenta dividir por barra
+
+                            if (partes.length === 3) {
+                                // Formato dd/mm/aaaa
+                                dataObj = new Date(partes[2], partes[1] - 1, partes[0]);
+                            } 
+                            else if (partes.length === 2) {
+                                // Formato mmm/aaaa ou mmm/aa (Ex: jan/2026, fev/26)
+                                const mesesAbv = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+                                const mesTexto = partes[0].substring(0, 3); // Garante 3 letras
+                                const mesIndex = mesesAbv.indexOf(mesTexto);
+                                
+                                let anoTexto = partes[1];
+                                if (anoTexto.length === 2) anoTexto = "20" + anoTexto; // Transforma 26 em 2026
+
+                                if (mesIndex > -1) {
+                                    dataObj = new Date(anoTexto, mesIndex, 15); // Dia 15 para evitar fuso horário
+                                }
+                            }
                         }
 
                         if (!dataObj || isNaN(dataObj.getTime())) {
-                            erros.push(`Linha ${index + 2}: Data inválida para "${nomeLocal}".`);
+                            erros.push(`Linha ${index + 2}: Data inválida ("${dataRaw}") para "${nomeLocal}". Use dd/mm/aaaa ou mmm/aaaa.`);
                             return;
                         }
+                        // ---------------------------------------------
 
                         const mesIndex = dataObj.getMonth();
 
@@ -554,7 +578,6 @@
                     if (importadosCount > 0) {
                         salvarDados(true);
                         // Se estivermos na tela de planejamento, recarregar a obra atual se ela foi afetada
-                        // Se não, mostrar a primeira obra afetada
                         if(obrasAfetadas.size > 0) {
                            const firstObra = obrasAfetadas.values().next().value;
                            window.mostrarPlanejamento2026(firstObra);
