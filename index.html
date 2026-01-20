@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v22 (Headers Detalhamento)</title>
+    <title>Sistema de Acompanhamento - v23 (Coordenação e Cards R$)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
@@ -155,12 +155,12 @@
         .planning-tab-btn { background: none; border: none; padding: 10px 20px; font-family: 'Poppins', sans-serif; font-size: 0.95rem; color: #5a718c; cursor: pointer; border-radius: 6px 6px 0 0; transition: all 0.2s; white-space: nowrap; }
         .planning-tab-btn:hover { background-color: #f0f4f8; color: #1e3a5f; }
         .planning-tab-btn.active { background-color: #1e3a5f; color: white; font-weight: 600; }
-        .planning-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
+        .planning-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
         .planning-month-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eee; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
         .planning-month-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: #007bff; }
         .planning-month-card.active-month { border: 2px solid #007bff; background-color: #f0f7ff; }
         .planning-month-card h4 { margin: 0 0 10px 0; color: #1e3a5f; font-size: 0.9rem; text-transform: uppercase; pointer-events: none; }
-        .planning-month-card input { width: 100%; text-align: center; font-weight: 600; color: #007bff; border: 1px solid #ddd; padding: 5px; border-radius: 4px; pointer-events: none; background: white; }
+        .planning-month-card input { width: 100%; text-align: center; font-weight: 600; border: 1px solid #ddd; padding: 5px; border-radius: 4px; pointer-events: none; background: white; }
         .planning-summary { margin-top: 20px; padding: 15px; background-color: #e8f5e9; border-radius: 8px; color: #2e7d32; font-weight: 600; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
         
         /* --- DETALHAMENTO DO PLANEJAMENTO (Atualizado v21 - Grid com 3 colunas) --- */
@@ -333,24 +333,38 @@
 
         window.mostrarPlanejamento2026 = function(obraIdSelecionada = null) {
             const obras = database.obras.sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto));
-            if (obras.length === 0) {
-                contentArea.innerHTML = `<div class="content-header"><h1>Planejamento 2026</h1><p>Nenhum contrato cadastrado.</p></div>`;
-                return;
-            }
-            const obraAtiva = obraIdSelecionada ? obras.find(o => o.id === obraIdSelecionada) : obras[0];
             
-            // Inicializar estruturas
-            if (!obraAtiva.planejamento2026) obraAtiva.planejamento2026 = Array(12).fill(0);
-            if (!obraAtiva.planejamentoDetalhes) obraAtiva.planejamentoDetalhes = {}; 
+            // ==========================================
+            // LOGICA NOVA: CÁLCULO DA COORDENAÇÃO GERAL
+            // ==========================================
+            const coordGeral = calculaDadosCoordenacao(obras);
+            
+            // Se nenhum ID selecionado, ou se for coord-geral, mostra a geral
+            const isCoordMode = !obraIdSelecionada || obraIdSelecionada === 'coord-geral';
+            let obraAtiva = isCoordMode ? coordGeral : obras.find(o => o.id === obraIdSelecionada);
 
-            // ==========================================
-            // LOGICA CORRIGIDA (v20): Meta 2026 = Global - 2025
-            // ==========================================
+            if (!obraAtiva) obraAtiva = coordGeral;
+
+            // Inicializar estruturas (se for obra real)
+            if (!isCoordMode) {
+                if (!obraAtiva.planejamento2026) obraAtiva.planejamento2026 = Array(12).fill(0);
+                if (!obraAtiva.planejamentoDetalhes) obraAtiva.planejamentoDetalhes = {}; 
+            }
+
+            // Metas 2026
             const metaGlobal = obraAtiva.dadosEconomia.meta || 0;
             const realizado2025 = obraAtiva.dadosEconomia.realizado2025 || 0;
             const meta2026 = metaGlobal - realizado2025;
 
-            const tabsHtml = obras.map(o => `
+            // Tabs: Inclui o botão de Coordenação Geral primeiro
+            let tabsHtml = `
+                 <button class="planning-tab-btn ${isCoordMode ? 'active' : ''}" 
+                        onclick="window.mostrarPlanejamento2026('coord-geral')" style="color: #6f42c1; font-weight:700;">
+                    🏛️ Coordenação Geral
+                </button>
+            `;
+            
+            tabsHtml += obras.map(o => `
                 <button class="planning-tab-btn ${o.id === obraAtiva.id ? 'active' : ''}" 
                         onclick="window.mostrarPlanejamento2026('${o.id}')">
                     ${o.nomeCurto}
@@ -362,30 +376,41 @@
             let totalPlanejado = 0;
 
             meses.forEach((mes, index) => {
-                const valor = obraAtiva.planejamento2026[index] || 0;
-                totalPlanejado += valor;
+                const valorEcon = obraAtiva.planejamento2026[index] || 0;
+                totalPlanejado += valorEcon;
+                
+                // Calcula o Total de Imobilização Dinamicamente (iterando os detalhes)
+                let totalImobMes = 0;
+                if(obraAtiva.planejamentoDetalhes && obraAtiva.planejamentoDetalhes[index]) {
+                     totalImobMes = obraAtiva.planejamentoDetalhes[index].reduce((acc, item) => acc + (item.valorImob || 0), 0);
+                }
+
                 const hasDetails = obraAtiva.planejamentoDetalhes[index] && obraAtiva.planejamentoDetalhes[index].length > 0;
                 const cardClass = hasDetails ? 'planning-month-card active-month' : 'planning-month-card';
                 
+                // NOVO LAYOUT DO CARD: ECONOMIAS + R$ IMOB
                 inputsHtml += `
                     <div class="${cardClass}" onclick="window.abrirDetalhesMes('${obraAtiva.id}', ${index}, '${mes}')">
                         <h4>${mes}</h4>
                         <div class="input-wrapper">
-                            <input type="text" value="${valor.toLocaleString('pt-BR')}" readonly>
+                            <input type="text" value="${valorEcon.toLocaleString('pt-BR')}" readonly style="color: #007bff;">
                             <span style="font-size: 0.8rem; color: #888; display:block; margin-top:5px;">Economias</span>
+                        </div>
+                        <div class="input-wrapper" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 5px;">
+                            <input type="text" value="${totalImobMes.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}" readonly style="color: #28a745; font-size: 0.9rem;">
+                            <span style="font-size: 0.75rem; color: #888; display:block; margin-top:2px;">R$ Imobilização</span>
                         </div>
                     </div>
                 `;
             });
             inputsHtml += '</div>';
             
-            // O SALDO AGORA É CONTRA A META DE 2026, NÃO A GLOBAL
             const saldo = meta2026 - totalPlanejado;
             const statusClass = saldo < 0 ? 'prazo-vencido' : (saldo === 0 ? 'goal-surpassed' : '');
             const statusTexto = saldo < 0 ? `Ultrapassou a Meta 2026 em ${Math.abs(saldo)}` : (saldo === 0 ? 'Planejamento Bate com a Meta 2026!' : `Faltam planejar para 2026: ${saldo}`);
 
-            // Botão de Importação (Visível apenas para Admin)
-            const adminButton = isAdmin ? 
+            // Botão de Importação: Esconde se estiver na aba Coordenação
+            const adminButton = (isAdmin && !isCoordMode) ? 
                 `<button onclick="triggerImportacaoExcel()" class="btn-primary" style="background-color: #28a745; margin-left: 20px;">📂 Importar Excel</button>` : '';
 
             contentArea.innerHTML = `
@@ -393,7 +418,7 @@
                     <div style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
                         <div>
                             <h1>Planejamento de Entregas 2026</h1>
-                            <p>Clique no mês para detalhar as sub-obras.</p>
+                            <p>Clique no mês para detalhar.</p>
                         </div>
                         ${adminButton}
                     </div>
@@ -416,46 +441,109 @@
             `;
         }
 
+        // Função Auxiliar para Criar o Objeto Virtual da Coordenação
+        function calculaDadosCoordenacao(obras) {
+            const coord = {
+                id: 'coord-geral',
+                nomeCurto: 'Coordenação Geral',
+                nomeCompleto: 'Visão Consolidada - Leste 2',
+                dadosEconomia: { meta: 0, realizado2025: 0 },
+                planejamento2026: Array(12).fill(0),
+                planejamentoDetalhes: {} 
+            };
+
+            obras.forEach(o => {
+                coord.dadosEconomia.meta += (o.dadosEconomia.meta || 0);
+                coord.dadosEconomia.realizado2025 += (o.dadosEconomia.realizado2025 || 0);
+
+                // Somar mês a mês
+                if(o.planejamento2026) {
+                    o.planejamento2026.forEach((val, idx) => {
+                        coord.planejamento2026[idx] += val;
+                    });
+                }
+                
+                // Criar detalhes agregados (Detalhe = Contrato)
+                if(o.planejamentoDetalhes) {
+                    for(let i=0; i<12; i++) {
+                        if(o.planejamentoDetalhes[i] && o.planejamentoDetalhes[i].length > 0) {
+                            if(!coord.planejamentoDetalhes[i]) coord.planejamentoDetalhes[i] = [];
+                            
+                            // Calcula totais deste contrato neste mês
+                            const totalEconContrato = o.planejamentoDetalhes[i].reduce((acc, item) => acc + (item.valor || 0), 0);
+                            const totalImobContrato = o.planejamentoDetalhes[i].reduce((acc, item) => acc + (item.valorImob || 0), 0);
+                            
+                            if (totalEconContrato > 0 || totalImobContrato > 0) {
+                                coord.planejamentoDetalhes[i].push({
+                                    nome: o.nomeCurto, // Nome da Obra vira o "Item"
+                                    valor: totalEconContrato,
+                                    valorImob: totalImobContrato,
+                                    isAggregate: true // Flag para saber que não pode editar
+                                });
+                            }
+                        }
+                    }
+                }
+            });
+            return coord;
+        }
+
         // v22: Header nos Detalhes
         window.abrirDetalhesMes = function(obraId, mesIndex, nomeMes) {
             const container = document.getElementById('planning-details-container');
-            const obra = database.obras.find(o => o.id === obraId);
+            
+            // Verifica se é Coordenação ou Obra Real
+            let obra;
+            let isCoordMode = false;
+            if (obraId === 'coord-geral') {
+                obra = calculaDadosCoordenacao(database.obras);
+                isCoordMode = true;
+            } else {
+                obra = database.obras.find(o => o.id === obraId);
+            }
+
             if (!obra) return;
             if (!obra.planejamentoDetalhes) obra.planejamentoDetalhes = {};
             const detalhes = obra.planejamentoDetalhes[mesIndex] || [];
+            
+            // Se for Coordenação, os itens são apenas leitura
+            const readOnlyAttr = (isCoordMode || !isAdmin) ? 'readonly' : '';
 
             const listaHtml = detalhes.map((item, idx) => `
                 <div class="detail-item">
-                    <input type="text" placeholder="Nome do Local / Sub-trecho" value="${item.nome}" onchange="window.atualizarItemDetalhe('${obraId}', ${mesIndex}, ${idx}, 'nome', this.value)" ${!isAdmin?'readonly':''}>
-                    <input type="number" placeholder="Qtd" value="${item.valor}" onchange="window.atualizarItemDetalhe('${obraId}', ${mesIndex}, ${idx}, 'valor', this.value)" ${!isAdmin?'readonly':''}>
-                    <input type="number" step="0.01" placeholder="R$ Imob." value="${item.valorImob || 0}" onchange="window.atualizarItemDetalhe('${obraId}', ${mesIndex}, ${idx}, 'valorImob', this.value)" ${!isAdmin?'readonly':''}>
-                    ${isAdmin ? `<button class="btn-mini btn-remove" onclick="window.removerItemDetalhe('${obraId}', ${mesIndex}, ${idx})">&times;</button>` : ''}
+                    <input type="text" placeholder="Nome do Local" value="${item.nome}" onchange="window.atualizarItemDetalhe('${obraId}', ${mesIndex}, ${idx}, 'nome', this.value)" ${readOnlyAttr}>
+                    <input type="number" placeholder="Qtd" value="${item.valor}" onchange="window.atualizarItemDetalhe('${obraId}', ${mesIndex}, ${idx}, 'valor', this.value)" ${readOnlyAttr}>
+                    <input type="number" step="0.01" placeholder="R$ Imob." value="${item.valorImob || 0}" onchange="window.atualizarItemDetalhe('${obraId}', ${mesIndex}, ${idx}, 'valorImob', this.value)" ${readOnlyAttr}>
+                    ${(!isCoordMode && isAdmin) ? `<button class="btn-mini btn-remove" onclick="window.removerItemDetalhe('${obraId}', ${mesIndex}, ${idx})">&times;</button>` : ''}
                 </div>
             `).join('');
+
+            const headerLabel = isCoordMode ? "Contratos com Produção neste Mês" : "Detalhamento de Locais";
 
             container.innerHTML = `
                 <div class="detail-panel">
                     <div class="detail-header">
-                        <h3>Detalhamento: ${nomeMes}</h3>
+                        <h3>${headerLabel}: ${nomeMes}</h3>
                         <button class="btn-mini btn-secondary" onclick="document.getElementById('planning-details-container').innerHTML = ''">Fechar</button>
                     </div>
 
                     <div class="detail-labels">
-                        <span>Local / Sub-trecho</span>
+                        <span>${isCoordMode ? 'Contrato' : 'Local / Sub-trecho'}</span>
                         <span>Economias</span>
                         <span>Valor Imob. (R$)</span>
                         <span></span>
                     </div>
 
                     <div class="detail-list">
-                        ${listaHtml.length > 0 ? listaHtml : '<p style="color:#888; font-style:italic;">Nenhum local adicionado para este mês.</p>'}
+                        ${listaHtml.length > 0 ? listaHtml : '<p style="color:#888; font-style:italic;">Nenhum registro para este mês.</p>'}
                     </div>
-                    ${isAdmin ? `<button class="btn-mini btn-add" onclick="window.adicionarItemDetalhe('${obraId}', ${mesIndex})">+ Adicionar Local</button>` : ''}
+                    ${(!isCoordMode && isAdmin) ? `<button class="btn-mini btn-add" onclick="window.adicionarItemDetalhe('${obraId}', ${mesIndex})">+ Adicionar Local</button>` : ''}
                 </div>
             `;
         }
 
         window.adicionarItemDetalhe = function(obraId, mesIndex) {
+            if(obraId === 'coord-geral') return; // Segurança
             const obra = database.obras.find(o => o.id === obraId);
             if(!obra.planejamentoDetalhes[mesIndex]) obra.planejamentoDetalhes[mesIndex] = [];
             obra.planejamentoDetalhes[mesIndex].push({ nome: '', valor: 0, valorImob: 0 });
@@ -464,6 +552,7 @@
         }
 
         window.removerItemDetalhe = function(obraId, mesIndex, itemIndex) {
+            if(obraId === 'coord-geral') return;
             const obra = database.obras.find(o => o.id === obraId);
             obra.planejamentoDetalhes[mesIndex].splice(itemIndex, 1);
             window.recalcularTotalMes(obraId, mesIndex);
@@ -471,6 +560,7 @@
         }
 
         window.atualizarItemDetalhe = function(obraId, mesIndex, itemIndex, campo, valor) {
+            if(obraId === 'coord-geral') return;
             const obra = database.obras.find(o => o.id === obraId);
             
             if (campo === 'valor') {
@@ -481,7 +571,6 @@
 
             obra.planejamentoDetalhes[mesIndex][itemIndex][campo] = valor;
             if (campo === 'valor') window.recalcularTotalMes(obraId, mesIndex);
-            // Se mudou apenas Imob, salva mas não precisa recalcular total de economias
             if (campo === 'valorImob') salvarDados();
         }
 
