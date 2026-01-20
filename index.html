@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v21 (Imob Detalhada)</title>
+    <title>Sistema de Acompanhamento - v22 (Headers Detalhamento)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
@@ -170,6 +170,18 @@
         .detail-header h3 { margin: 0; font-size: 1.1rem; color: #1e3a5f; }
         .detail-list { max-height: 300px; overflow-y: auto; margin-bottom: 15px; }
         
+        /* NOVO CSS: CABEÇALHOS DO DETALHAMENTO */
+        .detail-labels {
+            display: grid;
+            grid-template-columns: 3fr 1fr 1.5fr 40px; /* Igual ao .detail-item */
+            gap: 10px;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #5a718c;
+            padding: 0 5px;
+        }
+
         /* ATUALIZAÇÃO GRID: Nome (3fr), Qtd (1fr), R$ (1.5fr), Btn (40px) */
         .detail-item { display: grid; grid-template-columns: 3fr 1fr 1.5fr 40px; gap: 10px; margin-bottom: 8px; align-items: center; }
         
@@ -191,6 +203,7 @@
             .metrics { grid-template-columns: 1fr; }
             /* Ajuste mobile para o grid detalhado */
             .detail-item { grid-template-columns: 1fr 1fr 1fr 30px; gap: 5px; font-size: 0.9rem; }
+            .detail-labels { grid-template-columns: 1fr 1fr 1fr 30px; gap: 5px; font-size: 0.75rem; }
         }
     </style>
 </head>
@@ -403,7 +416,7 @@
             `;
         }
 
-        // v21: Funções de Detalhamento com suporte a Valor Imob
+        // v22: Header nos Detalhes
         window.abrirDetalhesMes = function(obraId, mesIndex, nomeMes) {
             const container = document.getElementById('planning-details-container');
             const obra = database.obras.find(o => o.id === obraId);
@@ -426,6 +439,14 @@
                         <h3>Detalhamento: ${nomeMes}</h3>
                         <button class="btn-mini btn-secondary" onclick="document.getElementById('planning-details-container').innerHTML = ''">Fechar</button>
                     </div>
+
+                    <div class="detail-labels">
+                        <span>Local / Sub-trecho</span>
+                        <span>Economias</span>
+                        <span>Valor Imob. (R$)</span>
+                        <span></span>
+                    </div>
+
                     <div class="detail-list">
                         ${listaHtml.length > 0 ? listaHtml : '<p style="color:#888; font-style:italic;">Nenhum local adicionado para este mês.</p>'}
                     </div>
