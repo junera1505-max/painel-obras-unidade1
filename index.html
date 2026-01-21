@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v23 (Coordenação e Cards R$)</title>
+    <title>Sistema de Acompanhamento - v24 (Detalhes Avanço)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
@@ -191,6 +191,11 @@
         .btn-remove { background-color: #dc3545; color: white; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* NOVO: Estilo para detalhes ocultos */
+        .details-container { display: none; margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border-left: 3px solid #007bff; animation: fadeIn 0.3s; }
+        .details-container.show { display: block; }
+        .btn-toggle-details { font-size: 0.85rem; color: #007bff; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; margin-top: 5px; }
+
         @media (max-width: 992px) {
             body, html { overflow-y: auto; overflow-x: hidden; }
             .sidebar-toggle { display: flex; }
@@ -297,12 +302,114 @@
         }
         
         function mostrarVisaoGeral(obras){
-             const tImobM = obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0); const tImobA = obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0); const tCostADM = obras.reduce((s, o) => s + (o.dadosCostAD ? o.dadosCostAD.meta : 0), 0); const tCostADA = obras.reduce((s, o) => s + (o.dadosCostAD ? o.dadosCostAD.atual : 0), 0); const tEconA = obras.reduce((s, o) => s + o.dadosEconomia.atual, 0); const tEconMeta26 = GLOBAL_GOAL_ECONOMIAS - tEconA; const pEconGlobal = calculatePercentage(tEconA, GLOBAL_GOAL_ECONOMIAS); const tAvanceM = obras.reduce((s, o) => s + o.dadosAvanceFisico.meta, 0); const tAvanceA = obras.reduce((s, o) => s + o.dadosAvanceFisico.atual, 0); const saldoAvance26 = tAvanceM - tAvanceA; const pImob = calculatePercentage(tImobA, tImobM); const pCostAD = calculatePercentage(tCostADA, tCostADM); const pAvance = calculatePercentage(tAvanceA, tAvanceM); const contagemContratosVisiveis = obras.filter(o => o.nomeCurto !== 'Varzeas A').length;
-             contentArea.innerHTML = `<div class="content-header"><div><h1>Visão Geral da Coordenação - Leste 2</h1><p>Resumo de todos os contratos.</p></div></div><div class="dashboard-grid"><section class="metrics"><figure class="metric-card"><figcaption class="label">Contratos Ativos</figcaption><div class="value">${contagemContratosVisiveis}</div></figure><figure class="metric-card"><figcaption class="label">Imobilização (Total)</figcaption><div class="value goal">${formatAsCompactCurrency(tImobM)}</div></figure><figure class="metric-card"><figcaption class="label">CostAD (Total)</figcaption><div class="value goal">${formatAsCompactCurrency(tCostADM)}</div></figure><figure class="metric-card"><figcaption class="label">Economias (Global)</figcaption><div class="value goal">${formatUnits(GLOBAL_GOAL_ECONOMIAS)}</div></figure></section><section class="metric-card progress-card"><h3>Progresso: Meta Imobilização 2025</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pImob > 100 ? 100 : pImob.toFixed(2)}%;">${pImob.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tImobM, tImobA, 'currency')}</div><div>Executado: <span>${formatCurrency(tImobA)}</span></div><div>Meta 2025: <span>${formatCurrency(tImobM)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: CostAD / Desembolso</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pCostAD > 100 ? 100 : pCostAD.toFixed(2)}%; background-color: #0054a6;">${pCostAD.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tCostADM, tCostADA, 'currency')}</div><div>Executado: <span>${formatCurrency(tCostADA)}</span></div><div>Meta Total: <span>${formatCurrency(tCostADM)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Economias (Meta Global)</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pEconGlobal > 100 ? 100 : pEconGlobal.toFixed(2)}%;background-color:#ff9800;">${pEconGlobal.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Meta 2026 (Restante): <span>${formatUnits(tEconMeta26)}</span></div><div>Realizado Total: <span>${formatUnits(tEconA)}</span></div><div>Meta Global: <span>${formatUnits(GLOBAL_GOAL_ECONOMIAS)}</span></div></div></section><section class="metric-card progress-card"><h3>Progresso: Avanço Físico</h3><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pAvance > 100 ? 100 : pAvance.toFixed(2)}%;">${pAvance.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Meta 2026 (Restante): <span>${formatUnits(saldoAvance26, 'm')}</span></div><div>Executado Total: <span>${formatUnits(tAvanceA, 'm')}</span></div><div>Extensão Total: <span>${formatUnits(tAvanceM, 'm')}</span></div></div></section></div>`; 
+             const GOAL_LIGACOES = 24688; 
+             const tImobM = obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0); 
+             const tImobA = obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0); 
+             const tCostADM = obras.reduce((s, o) => s + (o.dadosCostAD ? o.dadosCostAD.meta : 0), 0); 
+             const tCostADA = obras.reduce((s, o) => s + (o.dadosCostAD ? o.dadosCostAD.atual : 0), 0); 
+             const tEconA = obras.reduce((s, o) => s + o.dadosEconomia.atual, 0); 
+             const tEconMeta26 = GLOBAL_GOAL_ECONOMIAS - tEconA; 
+             const pEconGlobal = calculatePercentage(tEconA, GLOBAL_GOAL_ECONOMIAS); 
+             const tAvanceM = obras.reduce((s, o) => s + o.dadosAvanceFisico.meta, 0); 
+             const tAvanceA = obras.reduce((s, o) => s + o.dadosAvanceFisico.atual, 0); 
+             const saldoAvance26 = tAvanceM - tAvanceA; 
+             const pImob = calculatePercentage(tImobA, tImobM); 
+             const pCostAD = calculatePercentage(tCostADA, tCostADM); 
+             const pAvance = calculatePercentage(tAvanceA, tAvanceM); 
+             const contagemContratosVisiveis = obras.filter(o => o.nomeCurto !== 'Varzeas A').length;
+             const pLigacoes = calculatePercentage(tEconA, GOAL_LIGACOES); 
+             
+             contentArea.innerHTML = `
+                 <div class="content-header"><div><h1>Visão Geral da Coordenação - Leste 2</h1><p>Resumo de todos os contratos.</p></div></div>
+                 <div class="dashboard-grid">
+                     <section class="metrics"><figure class="metric-card"><figcaption class="label">Contratos Ativos</figcaption><div class="value">${contagemContratosVisiveis}</div></figure><figure class="metric-card"><figcaption class="label">Imobilização (Total)</figcaption><div class="value goal">${formatAsCompactCurrency(tImobM)}</div></figure><figure class="metric-card"><figcaption class="label">CostAD (Total)</figcaption><div class="value goal">${formatAsCompactCurrency(tCostADM)}</div></figure><figure class="metric-card"><figcaption class="label">Economias (Global)</figcaption><div class="value goal">${formatUnits(GLOBAL_GOAL_ECONOMIAS)}</div></figure></section>
+                     
+                     <section class="metric-card progress-card"><h3>Progresso: Meta Imobilização 2025</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pImob > 100 ? 100 : pImob.toFixed(2)}%;">${pImob.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tImobM, tImobA, 'currency')}</div><div>Executado: <span>${formatCurrency(tImobA)}</span></div><div>Meta 2025: <span>${formatCurrency(tImobM)}</span></div></div></section>
+                     
+                     <section class="metric-card progress-card"><h3>Progresso: CostAD / Desembolso</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pCostAD > 100 ? 100 : pCostAD.toFixed(2)}%; background-color: #0054a6;">${pCostAD.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tCostADM, tCostADA, 'currency')}</div><div>Executado: <span>${formatCurrency(tCostADA)}</span></div><div>Meta Total: <span>${formatCurrency(tCostADM)}</span></div></div></section>
+                     
+                     <section class="metric-card progress-card"><h3>Progresso: Economias (Meta Global)</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pEconGlobal > 100 ? 100 : pEconGlobal.toFixed(2)}%;background-color:#ff9800;">${pEconGlobal.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Meta 2026 (Restante): <span>${formatUnits(tEconMeta26)}</span></div><div>Realizado Total: <span>${formatUnits(tEconA)}</span></div><div>Meta Global: <span>${formatUnits(GLOBAL_GOAL_ECONOMIAS)}</span></div></div></section>
+                     
+                     <section class="metric-card progress-card"><h3>Total de Ligações</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pLigacoes > 100 ? 100 : pLigacoes.toFixed(2)}%; background-color: #17a2b8;">${pLigacoes.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(GOAL_LIGACOES, tEconA, 'units')}</div><div>Realizado: <span>${formatUnits(tEconA)}</span></div><div>Meta: <span>${formatUnits(GOAL_LIGACOES)}</span></div></div></section>
+                     
+                     <section class="metric-card progress-card"><h3>Progresso: Avanço Físico</h3><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pAvance > 100 ? 100 : pAvance.toFixed(2)}%;">${pAvance.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Meta 2026 (Restante): <span>${formatUnits(saldoAvance26, 'm')}</span></div><div>Executado Total: <span>${formatUnits(tAvanceA, 'm')}</span></div><div>Extensão Total: <span>${formatUnits(tAvanceM, 'm')}</span></div></div></section>
+                 </div>`; 
         }
+
+        // ==========================================
+        //  FUNÇÃO ALTERADA: Detalhes de Avanço Físico
+        // ==========================================
         function mostrarPaginaObra(o){
-             if (!o.dadosCostAD) o.dadosCostAD = { meta: 0, atual: 0 }; const pI = calculatePercentage(o.dadosImobilizacao.atual, o.dadosImobilizacao.meta); const pC = calculatePercentage(o.dadosCostAD.atual, o.dadosCostAD.meta); const pE = calculatePercentage(o.dadosEconomia.atual, o.dadosEconomia.meta); const pA = calculatePercentage(o.dadosAvanceFisico.atual, o.dadosAvanceFisico.meta); const vIf = (o.dadosImobilizacao.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); const vCf = (o.dadosCostAD.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); const readOnlyState = !isAdmin ? 'readonly' : ''; const adminOnlyDisplay = !isAdmin ? 'style="display:none;"' : ''; const restanteEcon = o.dadosEconomia.meta - o.dadosEconomia.atual; const restanteAvance = o.dadosAvanceFisico.meta - o.dadosAvanceFisico.atual;
-             contentArea.innerHTML = `<div class="content-header"><div><h1>${o.nomeCompleto}</h1><p>Acompanhamento detalhado.</p></div></div><div class="dashboard-grid"><section class="metric-card progress-card"><h3>Meta Imobilização 2025</h3><div class="input-area"><label for="input-imob">Valor Realizado:</label><div class="input-wrapper"><span class="currency-symbol">R$</span><input type="text" id="input-imob" data-obra-id="${o.id}" data-tipo="imobilizacao" value="${vIf}" ${readOnlyState}></div></div><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosImobilizacao.meta, o.dadosImobilizacao.atual, 'currency')}</div><div>Meta: <span>${formatCurrency(o.dadosImobilizacao.meta)}</span></div></div></section><section class="metric-card progress-card"><h3>CostAD (Desembolso)</h3><div class="input-area"><label for="input-costad">Valor Realizado:</label><div class="input-wrapper"><span class="currency-symbol">R$</span><input type="text" id="input-costad" data-obra-id="${o.id}" data-tipo="costad" value="${vCf}" ${readOnlyState}></div></div><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pC > 100 ? 100 : pC.toFixed(2)}%; background-color: #0054a6;">${pC.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosCostAD.meta, o.dadosCostAD.atual, 'currency')}</div><div>Meta: <span>${formatCurrency(o.dadosCostAD.meta)}</span></div></div></section><section class="metric-card progress-card"><h3>Economias</h3><div class="input-area"><label for="input-econ">Economias Atendidas:</label><div class="input-wrapper"><input type="text" id="input-econ" class="no-symbol" data-obra-id="${o.id}" data-tipo="economia" value="${(o.dadosEconomia.atual || 0).toLocaleString('pt-BR')}" ${readOnlyState}></div></div><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosEconomia.meta, o.dadosEconomia.atual, 'units', 'economias')}</div><div>Meta Total: <span>${formatUnits(o.dadosEconomia.meta)}</span></div><div>Meta 2026 (Restante): <span>${formatUnits(restanteEcon < 0 ? 0 : restanteEcon)}</span></div></div></section><section class="metric-card progress-card"><h3>Avanço Físico (m)</h3><div class="input-area"><label for="input-avance">Metros Executados:</label><div class="input-wrapper"><input type="text" id="input-avance" class="no-symbol" data-obra-id="${o.id}" data-tipo="avance" value="${(o.dadosAvanceFisico.atual || 0).toLocaleString('pt-BR')}" ${readOnlyState}></div></div><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(o.dadosAvanceFisico.meta, o.dadosAvanceFisico.atual, 'units', 'm')}</div><div>Meta Total: <span>${formatUnits(o.dadosAvanceFisico.meta, 'm')}</span></div><div>Meta 2026 (Restante): <span>${formatUnits(restanteAvance < 0 ? 0 : restanteAvance, 'm')}</span></div></div></section><section class="metric-card danger-zone" ${adminOnlyDisplay}><h3>Zona de Perigo</h3><p>A exclusão de um contrato é permanente.</p><button id="btn-excluir-contrato" data-obra-id="${o.id}">Excluir Contrato</button></section></div>`; if (isAdmin) { contentArea.querySelectorAll('input[type="text"]').forEach(i => { i.addEventListener('input', handleInputFormatting); i.addEventListener('change', handleInputChange); }); const btnExcluir = document.getElementById('btn-excluir-contrato'); if (btnExcluir) { btnExcluir.addEventListener('click', handleExcluirClick); } }
+             if (!o.dadosCostAD) o.dadosCostAD = { meta: 0, atual: 0 }; 
+             const pI = calculatePercentage(o.dadosImobilizacao.atual, o.dadosImobilizacao.meta); 
+             const pC = calculatePercentage(o.dadosCostAD.atual, o.dadosCostAD.meta); 
+             const pE = calculatePercentage(o.dadosEconomia.atual, o.dadosEconomia.meta); 
+             const pA = calculatePercentage(o.dadosAvanceFisico.atual, o.dadosAvanceFisico.meta); 
+             const vIf = (o.dadosImobilizacao.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); 
+             const vCf = (o.dadosCostAD.atual || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); 
+             const readOnlyState = !isAdmin ? 'readonly' : ''; 
+             const adminOnlyDisplay = !isAdmin ? 'style="display:none;"' : ''; 
+             const restanteEcon = o.dadosEconomia.meta - o.dadosEconomia.atual; 
+             const restanteAvance = o.dadosAvanceFisico.meta - o.dadosAvanceFisico.atual;
+
+             // Validações dos novos campos (se não existirem, são 0)
+             const vColetor = o.dadosAvanceFisico.coletor || 0;
+             const vInterligacao = o.dadosAvanceFisico.interligacao || 0;
+             const vRede = o.dadosAvanceFisico.rede || 0;
+
+             contentArea.innerHTML = `
+             <div class="content-header"><div><h1>${o.nomeCompleto}</h1><p>Acompanhamento detalhado.</p></div></div>
+             <div class="dashboard-grid">
+                
+                <section class="metric-card progress-card">
+                    <h3>Meta Imobilização 2025</h3>
+                    <div class="input-area"><label for="input-imob">Valor Realizado:</label><div class="input-wrapper"><span class="currency-symbol">R$</span><input type="text" id="input-imob" data-obra-id="${o.id}" data-tipo="imobilizacao" value="${vIf}" ${readOnlyState}></div></div>
+                    <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div>
+                    <div class="progress-details"><div>${formatarValorFaltante(o.dadosImobilizacao.meta, o.dadosImobilizacao.atual, 'currency')}</div><div>Meta: <span>${formatCurrency(o.dadosImobilizacao.meta)}</span></div></div>
+                </section>
+
+                <section class="metric-card progress-card">
+                    <h3>CostAD (Desembolso)</h3>
+                    <div class="input-area"><label for="input-costad">Valor Realizado:</label><div class="input-wrapper"><span class="currency-symbol">R$</span><input type="text" id="input-costad" data-obra-id="${o.id}" data-tipo="costad" value="${vCf}" ${readOnlyState}></div></div>
+                    <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pC > 100 ? 100 : pC.toFixed(2)}%; background-color: #0054a6;">${pC.toFixed(1).replace('.', ',')}%</div></div>
+                    <div class="progress-details"><div>${formatarValorFaltante(o.dadosCostAD.meta, o.dadosCostAD.atual, 'currency')}</div><div>Meta: <span>${formatCurrency(o.dadosCostAD.meta)}</span></div></div>
+                </section>
+
+                <section class="metric-card progress-card">
+                    <h3>Economias</h3>
+                    <div class="input-area"><label for="input-econ">Economias Atendidas:</label><div class="input-wrapper"><input type="text" id="input-econ" class="no-symbol" data-obra-id="${o.id}" data-tipo="economia" value="${(o.dadosEconomia.atual || 0).toLocaleString('pt-BR')}" ${readOnlyState}></div></div>
+                    <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div>
+                    <div class="progress-details"><div>${formatarValorFaltante(o.dadosEconomia.meta, o.dadosEconomia.atual, 'units', 'economias')}</div><div>Meta Total: <span>${formatUnits(o.dadosEconomia.meta)}</span></div><div>Meta 2026 (Restante): <span>${formatUnits(restanteEcon < 0 ? 0 : restanteEcon)}</span></div></div>
+                </section>
+
+                <section class="metric-card progress-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>Avanço Físico (m)</h3>
+                        <button type="button" class="btn-toggle-details" onclick="document.getElementById('detalhes-avance').classList.toggle('show')">▼ Detalhar</button>
+                    </div>
+                    
+                    <div class="input-area"><label for="input-avance">Metros Executados:</label><div class="input-wrapper"><input type="text" id="input-avance" class="no-symbol" data-obra-id="${o.id}" data-tipo="avance" value="${(o.dadosAvanceFisico.atual || 0).toLocaleString('pt-BR')}" ${readOnlyState}></div></div>
+                    <div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div>
+                    <div class="progress-details"><div>${formatarValorFaltante(o.dadosAvanceFisico.meta, o.dadosAvanceFisico.atual, 'units', 'm')}</div><div>Meta Total: <span>${formatUnits(o.dadosAvanceFisico.meta, 'm')}</span></div><div>Meta 2026 (Restante): <span>${formatUnits(restanteAvance < 0 ? 0 : restanteAvance, 'm')}</span></div></div>
+                    
+                    <div id="detalhes-avance" class="details-container">
+                        <div class="input-area"><label>Coletor Tronco:</label><div class="input-wrapper"><input type="text" class="no-symbol" data-obra-id="${o.id}" data-tipo="avance-coletor" value="${vColetor.toLocaleString('pt-BR')}" ${readOnlyState}></div></div>
+                        <div class="input-area"><label>Interligação:</label><div class="input-wrapper"><input type="text" class="no-symbol" data-obra-id="${o.id}" data-tipo="avance-interligacao" value="${vInterligacao.toLocaleString('pt-BR')}" ${readOnlyState}></div></div>
+                        <div class="input-area"><label>Rede Coletora:</label><div class="input-wrapper"><input type="text" class="no-symbol" data-obra-id="${o.id}" data-tipo="avance-rede" value="${vRede.toLocaleString('pt-BR')}" ${readOnlyState}></div></div>
+                    </div>
+                </section>
+
+                <section class="metric-card danger-zone" ${adminOnlyDisplay}><h3>Zona de Perigo</h3><p>A exclusão de um contrato é permanente.</p><button id="btn-excluir-contrato" data-obra-id="${o.id}">Excluir Contrato</button></section>
+             </div>`; 
+             
+             if (isAdmin) { 
+                 contentArea.querySelectorAll('input[type="text"]').forEach(i => { 
+                     i.addEventListener('input', handleInputFormatting); 
+                     i.addEventListener('change', handleInputChange); 
+                 }); 
+                 const btnExcluir = document.getElementById('btn-excluir-contrato'); 
+                 if (btnExcluir) { btnExcluir.addEventListener('click', handleExcluirClick); } 
+             }
         }
         
         function proximoSlide() { if (slides.length === 0) return; slides[currentSlide].classList.remove('active'); currentSlide = (currentSlide + 1) % slides.length; slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); }
@@ -333,37 +440,26 @@
 
         window.mostrarPlanejamento2026 = function(obraIdSelecionada = null) {
             const obras = database.obras.sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto));
-            
-            // ==========================================
-            // LOGICA NOVA: CÁLCULO DA COORDENAÇÃO GERAL
-            // ==========================================
             const coordGeral = calculaDadosCoordenacao(obras);
-            
-            // Se nenhum ID selecionado, ou se for coord-geral, mostra a geral
             const isCoordMode = !obraIdSelecionada || obraIdSelecionada === 'coord-geral';
             let obraAtiva = isCoordMode ? coordGeral : obras.find(o => o.id === obraIdSelecionada);
-
             if (!obraAtiva) obraAtiva = coordGeral;
 
-            // Inicializar estruturas (se for obra real)
             if (!isCoordMode) {
                 if (!obraAtiva.planejamento2026) obraAtiva.planejamento2026 = Array(12).fill(0);
                 if (!obraAtiva.planejamentoDetalhes) obraAtiva.planejamentoDetalhes = {}; 
             }
 
-            // Metas 2026
             const metaGlobal = obraAtiva.dadosEconomia.meta || 0;
             const realizado2025 = obraAtiva.dadosEconomia.realizado2025 || 0;
             const meta2026 = metaGlobal - realizado2025;
 
-            // Tabs: Inclui o botão de Coordenação Geral primeiro
             let tabsHtml = `
                  <button class="planning-tab-btn ${isCoordMode ? 'active' : ''}" 
                         onclick="window.mostrarPlanejamento2026('coord-geral')" style="color: #0054a6; font-weight:700;">
                     🏛️ EML 2
                 </button>
             `;
-            
             tabsHtml += obras.map(o => `
                 <button class="planning-tab-btn ${o.id === obraAtiva.id ? 'active' : ''}" 
                         onclick="window.mostrarPlanejamento2026('${o.id}')">
@@ -378,17 +474,12 @@
             meses.forEach((mes, index) => {
                 const valorEcon = obraAtiva.planejamento2026[index] || 0;
                 totalPlanejado += valorEcon;
-                
-                // Calcula o Total de Imobilização Dinamicamente (iterando os detalhes)
                 let totalImobMes = 0;
                 if(obraAtiva.planejamentoDetalhes && obraAtiva.planejamentoDetalhes[index]) {
                      totalImobMes = obraAtiva.planejamentoDetalhes[index].reduce((acc, item) => acc + (item.valorImob || 0), 0);
                 }
-
                 const hasDetails = obraAtiva.planejamentoDetalhes[index] && obraAtiva.planejamentoDetalhes[index].length > 0;
                 const cardClass = hasDetails ? 'planning-month-card active-month' : 'planning-month-card';
-                
-                // NOVO LAYOUT DO CARD: ECONOMIAS + R$ IMOB
                 inputsHtml += `
                     <div class="${cardClass}" onclick="window.abrirDetalhesMes('${obraAtiva.id}', ${index}, '${mes}')">
                         <h4>${mes}</h4>
@@ -409,7 +500,6 @@
             const statusClass = saldo < 0 ? 'prazo-vencido' : (saldo === 0 ? 'goal-surpassed' : '');
             const statusTexto = saldo < 0 ? `Ultrapassou a Meta 2026 em ${Math.abs(saldo)}` : (saldo === 0 ? 'Planejamento Bate com a Meta 2026!' : `Faltam planejar para 2026: ${saldo}`);
 
-            // Botão de Importação: Esconde se estiver na aba Coordenação
             const adminButton = (isAdmin && !isCoordMode) ? 
                 `<button onclick="triggerImportacaoExcel()" class="btn-primary" style="background-color: #28a745; margin-left: 20px;">📂 Importar Excel</button>` : '';
 
@@ -435,13 +525,11 @@
                     </div>
                     ${inputsHtml}
                     <div class="planning-summary"><span>Total Planejado (Soma dos Meses): ${totalPlanejado.toLocaleString('pt-BR')}</span><span class="${statusClass}">${statusTexto}</span></div>
-                    
                     <div id="planning-details-container"></div>
                 </div>
             `;
         }
 
-        // Função Auxiliar para Criar o Objeto Virtual da Coordenação
         function calculaDadosCoordenacao(obras) {
             const coord = {
                 id: 'coord-geral',
@@ -451,34 +539,26 @@
                 planejamento2026: Array(12).fill(0),
                 planejamentoDetalhes: {} 
             };
-
             obras.forEach(o => {
                 coord.dadosEconomia.meta += (o.dadosEconomia.meta || 0);
                 coord.dadosEconomia.realizado2025 += (o.dadosEconomia.realizado2025 || 0);
-
-                // Somar mês a mês
                 if(o.planejamento2026) {
                     o.planejamento2026.forEach((val, idx) => {
                         coord.planejamento2026[idx] += val;
                     });
                 }
-                
-                // Criar detalhes agregados (Detalhe = Contrato)
                 if(o.planejamentoDetalhes) {
                     for(let i=0; i<12; i++) {
                         if(o.planejamentoDetalhes[i] && o.planejamentoDetalhes[i].length > 0) {
                             if(!coord.planejamentoDetalhes[i]) coord.planejamentoDetalhes[i] = [];
-                            
-                            // Calcula totais deste contrato neste mês
                             const totalEconContrato = o.planejamentoDetalhes[i].reduce((acc, item) => acc + (item.valor || 0), 0);
                             const totalImobContrato = o.planejamentoDetalhes[i].reduce((acc, item) => acc + (item.valorImob || 0), 0);
-                            
                             if (totalEconContrato > 0 || totalImobContrato > 0) {
                                 coord.planejamentoDetalhes[i].push({
-                                    nome: o.nomeCurto, // Nome da Obra vira o "Item"
+                                    nome: o.nomeCurto, 
                                     valor: totalEconContrato,
                                     valorImob: totalImobContrato,
-                                    isAggregate: true // Flag para saber que não pode editar
+                                    isAggregate: true 
                                 });
                             }
                         }
@@ -488,11 +568,8 @@
             return coord;
         }
 
-        // v22: Header nos Detalhes
         window.abrirDetalhesMes = function(obraId, mesIndex, nomeMes) {
             const container = document.getElementById('planning-details-container');
-            
-            // Verifica se é Coordenação ou Obra Real
             let obra;
             let isCoordMode = false;
             if (obraId === 'coord-geral') {
@@ -501,14 +578,10 @@
             } else {
                 obra = database.obras.find(o => o.id === obraId);
             }
-
             if (!obra) return;
             if (!obra.planejamentoDetalhes) obra.planejamentoDetalhes = {};
             const detalhes = obra.planejamentoDetalhes[mesIndex] || [];
-            
-            // Se for Coordenação, os itens são apenas leitura
             const readOnlyAttr = (isCoordMode || !isAdmin) ? 'readonly' : '';
-
             const listaHtml = detalhes.map((item, idx) => `
                 <div class="detail-item">
                     <input type="text" placeholder="Nome do Local" value="${item.nome}" onchange="window.atualizarItemDetalhe('${obraId}', ${mesIndex}, ${idx}, 'nome', this.value)" ${readOnlyAttr}>
@@ -517,23 +590,19 @@
                     ${(!isCoordMode && isAdmin) ? `<button class="btn-mini btn-remove" onclick="window.removerItemDetalhe('${obraId}', ${mesIndex}, ${idx})">&times;</button>` : ''}
                 </div>
             `).join('');
-
             const headerLabel = isCoordMode ? "Contratos com Produção neste Mês" : "Detalhamento de Locais";
-
             container.innerHTML = `
                 <div class="detail-panel">
                     <div class="detail-header">
                         <h3>${headerLabel}: ${nomeMes}</h3>
                         <button class="btn-mini btn-secondary" onclick="document.getElementById('planning-details-container').innerHTML = ''">Fechar</button>
                     </div>
-
                     <div class="detail-labels">
                         <span>${isCoordMode ? 'Contrato' : 'Local / Sub-trecho'}</span>
                         <span>Economias</span>
                         <span>Valor Imob. (R$)</span>
                         <span></span>
                     </div>
-
                     <div class="detail-list">
                         ${listaHtml.length > 0 ? listaHtml : '<p style="color:#888; font-style:italic;">Nenhum registro para este mês.</p>'}
                     </div>
@@ -543,7 +612,7 @@
         }
 
         window.adicionarItemDetalhe = function(obraId, mesIndex) {
-            if(obraId === 'coord-geral') return; // Segurança
+            if(obraId === 'coord-geral') return; 
             const obra = database.obras.find(o => o.id === obraId);
             if(!obra.planejamentoDetalhes[mesIndex]) obra.planejamentoDetalhes[mesIndex] = [];
             obra.planejamentoDetalhes[mesIndex].push({ nome: '', valor: 0, valorImob: 0 });
@@ -562,13 +631,8 @@
         window.atualizarItemDetalhe = function(obraId, mesIndex, itemIndex, campo, valor) {
             if(obraId === 'coord-geral') return;
             const obra = database.obras.find(o => o.id === obraId);
-            
-            if (campo === 'valor') {
-                valor = parseInt(valor) || 0;
-            } else if (campo === 'valorImob') {
-                valor = parseFloat(valor) || 0;
-            }
-
+            if (campo === 'valor') valor = parseInt(valor) || 0;
+            else if (campo === 'valorImob') valor = parseFloat(valor) || 0;
             obra.planejamentoDetalhes[mesIndex][itemIndex][campo] = valor;
             if (campo === 'valor') window.recalcularTotalMes(obraId, mesIndex);
             if (campo === 'valorImob') salvarDados();
@@ -578,12 +642,8 @@
             const obra = database.obras.find(o => o.id === obraId);
             const detalhes = obra.planejamentoDetalhes[mesIndex] || [];
             const total = detalhes.reduce((acc, item) => acc + (item.valor || 0), 0);
-            
-            // Atualiza o total principal
             obra.planejamento2026[mesIndex] = total;
             salvarDados();
-            
-            // Atualiza a visualização principal (sem fechar os detalhes)
             setTimeout(() => {
                 const nomeMes = obterNomeMes(mesIndex);
                 window.mostrarPlanejamento2026(obraId);
@@ -593,11 +653,6 @@
         
         function obterNomeMes(i) { return ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"][i]; }
 
-        // -------------------------------------------------------------------------
-        
-        // ==========================================
-        // MÓDULO DE IMPORTAÇÃO DE EXCEL (ATUALIZADO v21 - Suporte Imob)
-        // ==========================================
         window.triggerImportacaoExcel = function() {
             const input = document.createElement('input');
             input.type = 'file';
@@ -608,14 +663,8 @@
 
         window.processarImportacaoExcel = function(file) {
             if (!file) return;
-
-            if (!isAdmin) {
-                alert("Apenas administradores podem importar dados.");
-                return;
-            }
-
+            if (!isAdmin) { alert("Apenas administradores podem importar dados."); return; }
             const reader = new FileReader();
-            
             reader.onload = function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
@@ -623,98 +672,50 @@
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                    if (jsonData.length > 0) jsonData.shift(); // Remove cabeçalho
-
+                    if (jsonData.length > 0) jsonData.shift(); 
                     let importadosCount = 0;
                     let erros = [];
                     const obrasAfetadas = new Set();
-
-                    console.log("Iniciando processamento de " + jsonData.length + " linhas...");
-
                     jsonData.forEach((row, index) => {
-                        // A: Contrato, B: Local, C: Data, D: Qtd, E: Valor Imob (Novo)
                         const contratoNome = row[0]; 
                         const nomeLocal = row[1];    
                         const dataRaw = row[2];      
                         const qtd = parseInt(row[3]) || 0;
-                        const valorImob = parseFloat(row[4]) || 0; // Coluna E
-
+                        const valorImob = parseFloat(row[4]) || 0; 
                         if (!contratoNome || !dataRaw) return;
-
-                        const obra = database.obras.find(o => 
-                            o.nomeCurto.trim().toLowerCase() === contratoNome.toString().trim().toLowerCase()
-                        );
-
-                        if (!obra) {
-                            erros.push(`Linha ${index + 2}: Contrato "${contratoNome}" não encontrado.`);
-                            return;
-                        }
-
-                        // --- PARSER INTELIGENTE DE DATAS ---
+                        const obra = database.obras.find(o => o.nomeCurto.trim().toLowerCase() === contratoNome.toString().trim().toLowerCase());
+                        if (!obra) { erros.push(`Linha ${index + 2}: Contrato "${contratoNome}" não encontrado.`); return; }
                         let dataObj;
-                        
-                        if (dataRaw instanceof Date) {
-                            dataObj = dataRaw;
-                        } 
+                        if (dataRaw instanceof Date) { dataObj = dataRaw; } 
                         else {
                             const stringData = String(dataRaw).toLowerCase().trim();
-                            const partes = stringData.split('/'); // Tenta dividir por barra
-
-                            if (partes.length === 3) {
-                                // Formato dd/mm/aaaa
-                                dataObj = new Date(partes[2], partes[1] - 1, partes[0]);
-                            } 
+                            const partes = stringData.split('/'); 
+                            if (partes.length === 3) { dataObj = new Date(partes[2], partes[1] - 1, partes[0]); } 
                             else if (partes.length === 2) {
-                                // Formato mmm/aaaa ou mmm/aa (Ex: jan/2026, fev/26)
                                 const mesesAbv = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-                                const mesTexto = partes[0].substring(0, 3); // Garante 3 letras
+                                const mesTexto = partes[0].substring(0, 3);
                                 const mesIndex = mesesAbv.indexOf(mesTexto);
-                                
                                 let anoTexto = partes[1];
-                                if (anoTexto.length === 2) anoTexto = "20" + anoTexto; // Transforma 26 em 2026
-
-                                if (mesIndex > -1) {
-                                    dataObj = new Date(anoTexto, mesIndex, 15); // Dia 15 para evitar fuso horário
-                                }
+                                if (anoTexto.length === 2) anoTexto = "20" + anoTexto; 
+                                if (mesIndex > -1) { dataObj = new Date(anoTexto, mesIndex, 15); }
                             }
                         }
-
-                        if (!dataObj || isNaN(dataObj.getTime())) {
-                            erros.push(`Linha ${index + 2}: Data inválida ("${dataRaw}") para "${nomeLocal}". Use dd/mm/aaaa ou mmm/aaaa.`);
-                            return;
-                        }
-                        // ---------------------------------------------
-
+                        if (!dataObj || isNaN(dataObj.getTime())) { erros.push(`Linha ${index + 2}: Data inválida ("${dataRaw}") para "${nomeLocal}". Use dd/mm/aaaa ou mmm/aaaa.`); return; }
                         const mesIndex = dataObj.getMonth();
-
                         if (!obra.planejamentoDetalhes) obra.planejamentoDetalhes = {};
                         if (!obra.planejamentoDetalhes[mesIndex]) obra.planejamentoDetalhes[mesIndex] = [];
-
-                        obra.planejamentoDetalhes[mesIndex].push({
-                            nome: nomeLocal || 'Importado Excel',
-                            valor: qtd,
-                            valorImob: valorImob
-                        });
-
-                        // Recalcular Total Mes (apenas qtd conta para meta)
+                        obra.planejamentoDetalhes[mesIndex].push({ nome: nomeLocal || 'Importado Excel', valor: qtd, valorImob: valorImob });
                         const totalMes = obra.planejamentoDetalhes[mesIndex].reduce((acc, item) => acc + (item.valor || 0), 0);
                         if (!obra.planejamento2026) obra.planejamento2026 = Array(12).fill(0);
                         obra.planejamento2026[mesIndex] = totalMes;
-
                         importadosCount++;
                         obrasAfetadas.add(obra.id);
                     });
-
                     let msg = `Processamento concluído!\n${importadosCount} registros importados com sucesso.`;
-                    if (erros.length > 0) {
-                        msg += `\n\nErros (${erros.length}):\n` + erros.slice(0, 5).join('\n') + (erros.length > 5 ? '\n...' : '');
-                    }
+                    if (erros.length > 0) { msg += `\n\nErros (${erros.length}):\n` + erros.slice(0, 5).join('\n') + (erros.length > 5 ? '\n...' : ''); }
                     alert(msg);
-
                     if (importadosCount > 0) {
                         salvarDados(true);
-                        // Se estivermos na tela de planejamento, recarregar a obra atual se ela foi afetada
                         if(obrasAfetadas.size > 0) {
                            const firstObra = obrasAfetadas.values().next().value;
                            window.mostrarPlanejamento2026(firstObra);
@@ -722,17 +723,10 @@
                            window.mostrarPlanejamento2026();
                         }
                     }
-
-                } catch (err) {
-                    console.error(err);
-                    alert("Erro ao ler o arquivo. Verifique se é um Excel válido (.xlsx).");
-                }
+                } catch (err) { console.error(err); alert("Erro ao ler o arquivo. Verifique se é um Excel válido (.xlsx)."); }
             };
-
             reader.readAsArrayBuffer(file);
         }
-
-        // =========================================================================
 
         function handleExcluirClick(e) { const oId = e.target.dataset.obraId; const o = database.obras.find(x => x.id === oId); if (!o) return; if (confirm(`Excluir "${o.nomeCompleto}"?\nAção permanente.`)) { const idx = database.obras.findIndex(x => x.id === oId); if (idx > -1) { database.obras.splice(idx, 1); salvarDados(true); gerarNavegacao(database.obras); navList.querySelector('a[data-id="visao-geral"]').click(); } } }
         
@@ -776,12 +770,7 @@
         function gerarTextoHistorico(obras) { let output = []; const tipos = [ { key: 'dadosImobilizacao', nome: 'Imobilização' }, { key: 'dadosCostAD', nome: 'CostAD' }, { key: 'dadosEconomia', nome: 'Economia' }, { key: 'dadosAvanceFisico', nome: 'Avanço' } ]; const ordemDosCards = ["1B1", "1A2", "1B2", "1A1", "6A", "17B", "17A"]; const ordemMap = new Map(ordemDosCards.map((nome, index) => [nome, index])); const getSortIndex = (obra) => { const sufixo = obra.nomeCurto.split(' ').pop(); return ordemMap.has(sufixo) ? ordemMap.get(sufixo) : Infinity; }; const obrasOrdenadas = [...obras].sort((a, b) => { const indexA = getSortIndex(a); const indexB = getSortIndex(b); if (indexA === Infinity && indexB === Infinity) { return a.nomeCurto.localeCompare(b.nomeCurto); } return indexA - indexB; }); for (const obra of obrasOrdenadas) { output.push(`\n# ${obra.nomeCurto}`); let hasEntries = false; for (const tipo of tipos) { const dados = obra[tipo.key]; if (dados && dados.historico && dados.historico.length > 0) { dados.historico.sort((a,b) => a.mes.localeCompare(b.mes)); for (const item of dados.historico) { output.push(`${tipo.nome}, ${item.mes}, ${item.meta || 0}, ${item.realizado || 0}`); hasEntries = true; } } } if (!hasEntries) output.push(`(Nenhum histórico lançado)`); } return output.join('\n').trim(); }
         function handleSalvarHistorico() { const text = document.getElementById('historico-textarea').value; const lines = text.split('\n'); let currentObra = null; if (!confirm("Tem certeza que deseja salvar? Isso irá sobrescrever o histórico existente.")) { return; } for (const obra of database.obras) { if (obra.dadosImobilizacao) obra.dadosImobilizacao.historico = []; if (obra.dadosEconomia) obra.dadosEconomia.historico = []; if (obra.dadosAvanceFisico) obra.dadosAvanceFisico.historico = []; if (!obra.dadosCostAD) obra.dadosCostAD = {}; obra.dadosCostAD.historico = []; } for (const line of lines) { const trimmedLine = line.trim(); if (trimmedLine.startsWith('#')) { const nomeCurto = trimmedLine.substring(1).trim(); currentObra = database.obras.find(o => o.nomeCurto === nomeCurto); if (!currentObra) console.warn(`Obra não encontrada: ${nomeCurto}`); continue; } if (!currentObra || trimmedLine === "" || trimmedLine.startsWith('(')) { continue; } const parts = trimmedLine.split(',').map(s => s.trim()); if (parts.length !== 4) { console.warn(`Linha mal formatada: ${trimmedLine}`); continue; } const [tipo, mes, metaStr, realizadoStr] = parts; const meta = parseFloat(metaStr) || 0; const realizado = parseFloat(realizadoStr) || 0; if (!/^\d{4}-\d{2}$/.test(mes)) { console.warn(`Formato de mês inválido: ${mes}. Use YYYY-MM.`); continue; } const newItem = { mes, meta, realizado }; let targetArray = null; if (tipo.toLowerCase().startsWith('imobil')) { if (!currentObra.dadosImobilizacao) currentObra.dadosImobilizacao = {}; if (!currentObra.dadosImobilizacao.historico) currentObra.dadosImobilizacao.historico = []; targetArray = currentObra.dadosImobilizacao.historico; } else if (tipo.toLowerCase().startsWith('econ')) { if (!currentObra.dadosEconomia) currentObra.dadosEconomia = {}; if (!currentObra.dadosEconomia.historico) currentObra.dadosEconomia.historico = []; targetArray = currentObra.dadosEconomia.historico; } else if (tipo.toLowerCase().startsWith('avan')) { if (!currentObra.dadosAvanceFisico) currentObra.dadosAvanceFisico = {}; if (!currentObra.dadosAvanceFisico.historico) currentObra.dadosAvanceFisico.historico = []; targetArray = currentObra.dadosAvanceFisico.historico; } else if (tipo.toLowerCase().startsWith('cost')) { if (!currentObra.dadosCostAD) currentObra.dadosCostAD = {}; if (!currentObra.dadosCostAD.historico) currentObra.dadosCostAD.historico = []; targetArray = currentObra.dadosCostAD.historico; } else { console.warn(`Tipo desconhecido: ${tipo}`); continue; } targetArray.push(newItem); } console.log("Database atualizado com histórico:", database); alert("Histórico processado. Salvando no banco..."); salvarDados(true); }
         function mostrarPaginaHistorico() { if (!isAdmin) { contentArea.innerHTML = `<div class="content-header"><h1>Acesso Negado</h1><p>Esta área é restrita.</p></div>`; return; } let currentText = gerarTextoHistorico(database.obras); contentArea.innerHTML = `<div class="content-header"><div><h1>Lançar Histórico Mensal</h1><p>Use o formato abaixo. O salvamento <strong>sobrescreve todo</strong> o histórico anterior.</p></div></div><div class="metric-card"><h3>Instruções</h3><ul style="font-size: 0.9rem;"><li>Linhas com <code># Nome do Contrato</code> definem qual contrato os dados abaixo pertencem. (Ex: <code># Pacote 17A</code>)</li><li>Linhas de dados devem ter o formato: <code>TIPO, YYYY-MM, META, REALIZADO</code></li><li><strong>Tipos válidos:</strong> <code>Imobilização</code>, <code>Economia</code>, <code>Avanço</code>, <code>CostAD</code>.</li><li><strong>Exemplo:</strong> <code>CostAD, 2025-03, 10000, 12000</code></li></ul><textarea id="historico-textarea" style="width: 100%; height: 50vh; font-family: 'Courier New', Courier, monospace; font-size: 14px; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">${currentText}</textarea><div style="text-align: right; margin-top: 20px;"><button id="btn-salvar-historico" class="btn-primary" style="background-color: #c82333;">Salvar e Sobrescrever Histórico</button></div></div>`; document.getElementById('btn-salvar-historico').addEventListener('click', handleSalvarHistorico); }
-        
-        // ==========================================
-        // MÓDULO DE CORREÇÃO AUTOMÁTICA DE METAS (v20)
-        // ==========================================
         function aplicarCorrecaoMetas2025_2026() {
-            // Dados fornecidos pelo usuário para correção (r25 = Realizado 2025, m26 = Meta 2026 Restante)
             const DATA_CORRECTION = [
                 { key: '1B1', r25: 7565, m26: 16508 },
                 { key: '1A2', r25: 16175, m26: 23000 },
@@ -791,32 +780,19 @@
                 { key: '17B', r25: 2076, m26: 3327 },
                 { key: '17A', r25: 700, m26: 1885 }
             ];
-
             let mudou = false;
-
             DATA_CORRECTION.forEach(d => {
-                // Tenta encontrar a obra pelo nome (ex: "Pacote 1B1" contém "1B1")
                 const obra = database.obras.find(o => o.nomeCurto.toUpperCase().includes(d.key));
-                
                 if (obra) {
-                    // Meta Global = Realizado 2025 + O que falta em 2026
                     const novaMetaGlobal = d.r25 + d.m26;
-
-                    // Se a meta ou o realizado armazenado estiverem diferentes, atualiza
                     if (obra.dadosEconomia.meta !== novaMetaGlobal || obra.dadosEconomia.realizado2025 !== d.r25) {
-                        console.log(`Corrigindo dados para ${obra.nomeCurto}: MetaGlobal ${novaMetaGlobal}, Realizado25 ${d.r25}`);
                         obra.dadosEconomia.meta = novaMetaGlobal;
-                        obra.dadosEconomia.realizado2025 = d.r25; // Salva o realizado de 2025 no objeto
+                        obra.dadosEconomia.realizado2025 = d.r25; 
                         mudou = true;
                     }
                 }
             });
-
-            // Se houve alteração, salva no servidor
-            if (mudou && isAdmin) {
-                console.log("Correções aplicadas. Salvando dados...");
-                salvarDados();
-            }
+            if (mudou && isAdmin) { salvarDados(); }
         }
 
         async function carregarDados() { 
@@ -828,10 +804,7 @@
                 if (!database.obras) database.obras = []; 
                 if (!database.comuniqueses) database.comuniqueses = []; 
                 database.obras.forEach(o => { if (!o.dadosCostAD) o.dadosCostAD = { meta: 0, atual: 0, historico: [] }; }); 
-                
-                // APLICA A CORREÇÃO LOGO APÓS CARREGAR
                 aplicarCorrecaoMetas2025_2026();
-
                 gerarNavegacao(database.obras); 
                 const linkAtivo = navList.querySelector('a.active'); 
                 if (linkAtivo) { linkAtivo.click(); } else { mostrarPainelTV(); } 
@@ -845,7 +818,6 @@
         function salvarDados(fU = false) { if (!isAdmin) { console.warn("Modo de leitura. Salvamento bloqueado."); return; } clearTimeout(saveTimeout); saveTimeout = setTimeout(async () => { console.log("Salvando..."); try { const r = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY }, body: JSON.stringify(database) }); if (!r.ok) throw new Error('Falha ao salvar.'); console.log("Salvo!"); if (fU) { const aL = navList.querySelector('a.active'); if (aL) aL.click(); } } catch (e) { console.error("Erro ao salvar:", e); alert("Não foi possível salvar."); } }, 1500); }
         function handleNavClick(e) { 
             e.preventDefault(); 
-            // Agora handlePainelTVKeyPress existe e é acessível
             document.removeEventListener('keydown', handlePainelTVKeyPress); 
             clearInterval(slideshowInterval); 
             const id = e.target.dataset.id; 
@@ -863,12 +835,57 @@
             else if (id === 'lancar-historico') mostrarPaginaHistorico(); 
             else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); } 
         }
-        function handleInputChange(e) { const i = e.target, oId = i.dataset.obraId, t = i.dataset.tipo; let vN = parseFloat(i.value.replace(/\./g, '').replace(',', '.')) || 0; const o = database.obras.find(x => x.id === oId); if (!o) return; switch (t) { case 'imobilizacao': o.dadosImobilizacao.atual = vN; break; case 'costad': if(!o.dadosCostAD) o.dadosCostAD = {}; o.dadosCostAD.atual = vN; break; case 'economia': o.dadosEconomia.atual = Math.round(vN); break; case 'avance': o.dadosAvanceFisico.atual = Math.round(vN); break; } salvarDados(); }
+
+        // ==========================================
+        //  FUNÇÃO ALTERADA: Soma Automática dos Detalhes
+        // ==========================================
+        function handleInputChange(e) { 
+            const i = e.target, oId = i.dataset.obraId, t = i.dataset.tipo; 
+            let vN = parseFloat(i.value.replace(/\./g, '').replace(',', '.')) || 0; 
+            const o = database.obras.find(x => x.id === oId); 
+            if (!o) return; 
+
+            switch (t) { 
+                case 'imobilizacao': o.dadosImobilizacao.atual = vN; break; 
+                case 'costad': if(!o.dadosCostAD) o.dadosCostAD = {}; o.dadosCostAD.atual = vN; break; 
+                case 'economia': o.dadosEconomia.atual = Math.round(vN); break; 
+                case 'avance': o.dadosAvanceFisico.atual = Math.round(vN); break; 
+                
+                // Novos Cases para os Detalhes
+                case 'avance-coletor': 
+                    o.dadosAvanceFisico.coletor = Math.round(vN); 
+                    atualizarTotalAvance(o);
+                    break;
+                case 'avance-interligacao': 
+                    o.dadosAvanceFisico.interligacao = Math.round(vN); 
+                    atualizarTotalAvance(o);
+                    break;
+                case 'avance-rede': 
+                    o.dadosAvanceFisico.rede = Math.round(vN); 
+                    atualizarTotalAvance(o);
+                    break;
+            } 
+            salvarDados(); 
+        }
+
+        // Nova função auxiliar para somar e atualizar visualmente
+        function atualizarTotalAvance(o) {
+            const coletor = o.dadosAvanceFisico.coletor || 0;
+            const interligacao = o.dadosAvanceFisico.interligacao || 0;
+            const rede = o.dadosAvanceFisico.rede || 0;
+            const total = coletor + interligacao + rede;
+            
+            o.dadosAvanceFisico.atual = total;
+            
+            // Atualiza o input "Total" visualmente sem recarregar a tela
+            const inputTotal = document.querySelector(`input[data-tipo="avance"][data-obra-id="${o.id}"]`);
+            if (inputTotal) {
+                inputTotal.value = total.toLocaleString('pt-BR');
+            }
+        }
 
         carregarDados();
     });
     </script>
 </body>
 </html>
-
-
