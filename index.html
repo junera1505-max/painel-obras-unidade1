@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v24 (Detalhes Avanço)</title>
+    <title>Sistema de Acompanhamento - v25 (Correção Ligações 0)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
@@ -301,8 +301,13 @@
             navList.querySelectorAll('a').forEach(l => l.addEventListener('click', handleNavClick)); 
         }
         
+        // ==========================================
+        //  FUNÇÃO ALTERADA: Correção das Ligações
+        // ==========================================
         function mostrarVisaoGeral(obras){
-             const GOAL_LIGACOES = 24688; 
+             const GOAL_LIGACOES = 24688; // Meta 
+             const REALIZADO_LIGACOES = 0; // ZERO realizado, desacoplado das Economias
+
              const tImobM = obras.reduce((s, o) => s + o.dadosImobilizacao.meta, 0); 
              const tImobA = obras.reduce((s, o) => s + o.dadosImobilizacao.atual, 0); 
              const tCostADM = obras.reduce((s, o) => s + (o.dadosCostAD ? o.dadosCostAD.meta : 0), 0); 
@@ -317,7 +322,9 @@
              const pCostAD = calculatePercentage(tCostADA, tCostADM); 
              const pAvance = calculatePercentage(tAvanceA, tAvanceM); 
              const contagemContratosVisiveis = obras.filter(o => o.nomeCurto !== 'Varzeas A').length;
-             const pLigacoes = calculatePercentage(tEconA, GOAL_LIGACOES); 
+             
+             // Porcentagem calculada com BASE ZERO
+             const pLigacoes = calculatePercentage(REALIZADO_LIGACOES, GOAL_LIGACOES); 
              
              contentArea.innerHTML = `
                  <div class="content-header"><div><h1>Visão Geral da Coordenação - Leste 2</h1><p>Resumo de todos os contratos.</p></div></div>
@@ -330,15 +337,12 @@
                      
                      <section class="metric-card progress-card"><h3>Progresso: Economias (Meta Global)</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pEconGlobal > 100 ? 100 : pEconGlobal.toFixed(2)}%;background-color:#ff9800;">${pEconGlobal.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Meta 2026 (Restante): <span>${formatUnits(tEconMeta26)}</span></div><div>Realizado Total: <span>${formatUnits(tEconA)}</span></div><div>Meta Global: <span>${formatUnits(GLOBAL_GOAL_ECONOMIAS)}</span></div></div></section>
                      
-                     <section class="metric-card progress-card"><h3>Total de Ligações</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pLigacoes > 100 ? 100 : pLigacoes.toFixed(2)}%; background-color: #17a2b8;">${pLigacoes.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(GOAL_LIGACOES, tEconA, 'units')}</div><div>Realizado: <span>${formatUnits(tEconA)}</span></div><div>Meta: <span>${formatUnits(GOAL_LIGACOES)}</span></div></div></section>
+                     <section class="metric-card progress-card"><h3>Total de Ligações</h3><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pLigacoes > 100 ? 100 : pLigacoes.toFixed(2)}%; background-color: #17a2b8;">${pLigacoes.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(GOAL_LIGACOES, REALIZADO_LIGACOES, 'units')}</div><div>Realizado: <span>0</span></div><div>Meta: <span>${formatUnits(GOAL_LIGACOES)}</span></div></div></section>
                      
                      <section class="metric-card progress-card"><h3>Progresso: Avanço Físico</h3><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pAvance > 100 ? 100 : pAvance.toFixed(2)}%;">${pAvance.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Meta 2026 (Restante): <span>${formatUnits(saldoAvance26, 'm')}</span></div><div>Executado Total: <span>${formatUnits(tAvanceA, 'm')}</span></div><div>Extensão Total: <span>${formatUnits(tAvanceM, 'm')}</span></div></div></section>
                  </div>`; 
         }
 
-        // ==========================================
-        //  FUNÇÃO ALTERADA: Detalhes de Avanço Físico
-        // ==========================================
         function mostrarPaginaObra(o){
              if (!o.dadosCostAD) o.dadosCostAD = { meta: 0, atual: 0 }; 
              const pI = calculatePercentage(o.dadosImobilizacao.atual, o.dadosImobilizacao.meta); 
@@ -352,7 +356,6 @@
              const restanteEcon = o.dadosEconomia.meta - o.dadosEconomia.atual; 
              const restanteAvance = o.dadosAvanceFisico.meta - o.dadosAvanceFisico.atual;
 
-             // Validações dos novos campos (se não existirem, são 0)
              const vColetor = o.dadosAvanceFisico.coletor || 0;
              const vInterligacao = o.dadosAvanceFisico.interligacao || 0;
              const vRede = o.dadosAvanceFisico.rede || 0;
@@ -836,9 +839,6 @@
             else { const o = database.obras.find(x => x.id === id); if (o) mostrarPaginaObra(o); } 
         }
 
-        // ==========================================
-        //  FUNÇÃO ALTERADA: Soma Automática dos Detalhes
-        // ==========================================
         function handleInputChange(e) { 
             const i = e.target, oId = i.dataset.obraId, t = i.dataset.tipo; 
             let vN = parseFloat(i.value.replace(/\./g, '').replace(',', '.')) || 0; 
@@ -851,7 +851,6 @@
                 case 'economia': o.dadosEconomia.atual = Math.round(vN); break; 
                 case 'avance': o.dadosAvanceFisico.atual = Math.round(vN); break; 
                 
-                // Novos Cases para os Detalhes
                 case 'avance-coletor': 
                     o.dadosAvanceFisico.coletor = Math.round(vN); 
                     atualizarTotalAvance(o);
@@ -868,7 +867,6 @@
             salvarDados(); 
         }
 
-        // Nova função auxiliar para somar e atualizar visualmente
         function atualizarTotalAvance(o) {
             const coletor = o.dadosAvanceFisico.coletor || 0;
             const interligacao = o.dadosAvanceFisico.interligacao || 0;
@@ -877,7 +875,6 @@
             
             o.dadosAvanceFisico.atual = total;
             
-            // Atualiza o input "Total" visualmente sem recarregar a tela
             const inputTotal = document.querySelector(`input[data-tipo="avance"][data-obra-id="${o.id}"]`);
             if (inputTotal) {
                 inputTotal.value = total.toLocaleString('pt-BR');
