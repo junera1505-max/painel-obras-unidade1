@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v29 (Mapa Otimizado + Dados)</title>
+    <title>Sistema de Acompanhamento - v30 (Tolerância Aumentada)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
@@ -492,6 +492,7 @@
             
             // Helper para encontrar chave ignorando maiusculas/minusculas
             const findKey = (props, targets) => {
+                if(!props) return "";
                 const keys = Object.keys(props);
                 for (const target of targets) {
                     const found = keys.find(k => k.toUpperCase().trim() === target.toUpperCase());
@@ -559,8 +560,9 @@
                     const jsonString = JSON.stringify(jsonContent);
                     const sizeInBytes = new Blob([jsonString]).size;
                     
-                    if (sizeInBytes > 250 * 1024) { // Limite seguro de 250KB para o JSONBin Free
-                        alert(`ERRO: Mesmo após otimização, o mapa tem ${(sizeInBytes/1024).toFixed(0)}KB. O limite do banco é ~250KB.\n\nAção necessária: Abra o QGIS, vá em Vetor > Geometria > Simplificar e reduza os vértices.`);
+                    // Tolerância AUMENTADA para 350KB
+                    if (sizeInBytes > 350 * 1024) { 
+                        alert(`ERRO: Mesmo após otimização, o mapa tem ${(sizeInBytes/1024).toFixed(0)}KB. O limite do banco é ~300KB.\n\nAção necessária: Abra o QGIS, vá em Vetor > Geometria > Simplificar e aumente a tolerância (ex: 0.0005).`);
                         return;
                     }
 
