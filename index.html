@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v25 (Correção Ligações 0)</title>
+    <title>Sistema de Acompanhamento - v26 (Mapas Integrados)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
     <style>
         /* CSS completo */
@@ -196,6 +199,39 @@
         .details-container.show { display: block; }
         .btn-toggle-details { font-size: 0.85rem; color: #007bff; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; margin-top: 5px; }
 
+        /* --- MAPS INTEGRATION CSS (Added by Architect) --- */
+        .map-wrapper {
+            margin-top: 30px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,20,60,0.05);
+            background: white;
+            border: 1px solid #dbe3f0;
+        }
+        .map-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f8fafd;
+        }
+        .map-header h3 { margin: 0; color: #1e3a5f; }
+        #map-canvas {
+            height: 500px; /* Altura considerável para boa visualização */
+            width: 100%;
+            z-index: 1;
+        }
+        .map-upload-controls {
+            padding: 10px;
+            background: #fff3cd;
+            border-bottom: 1px solid #ffeeba;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         @media (max-width: 992px) {
             body, html { overflow-y: auto; overflow-x: hidden; }
             .sidebar-toggle { display: flex; }
@@ -209,6 +245,7 @@
             /* Ajuste mobile para o grid detalhado */
             .detail-item { grid-template-columns: 1fr 1fr 1fr 30px; gap: 5px; font-size: 0.9rem; }
             .detail-labels { grid-template-columns: 1fr 1fr 1fr 30px; gap: 5px; font-size: 0.75rem; }
+            #map-canvas { height: 350px; }
         }
     </style>
 </head>
@@ -260,6 +297,8 @@
     <script>
     let isAdmin = false;
     const GLOBAL_GOAL_ECONOMIAS = 168000;
+    // Variável para armazenar a instância do mapa atual para gerenciamento de memória
+    let currentMap = null; 
 
     document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -302,7 +341,7 @@
         }
         
         // ==========================================
-        //  FUNÇÃO ALTERADA: Correção das Ligações
+        //  FUNÇÃO: Visão Geral
         // ==========================================
         function mostrarVisaoGeral(obras){
              const GOAL_LIGACOES = 24688; // Meta 
@@ -343,6 +382,80 @@
                  </div>`; 
         }
 
+        // ==========================================
+        //  MAP RENDERING LOGIC (Arquiteto)
+        // ==========================================
+        function renderizarMapa(o) {
+            // Se já existe um mapa instanciado, destruir para evitar leaks e conflitos
+            if (currentMap) {
+                currentMap.remove();
+                currentMap = null;
+            }
+
+            const mapContainer = document.getElementById('map-canvas');
+            if (!mapContainer) return;
+
+            // Inicializar o mapa (Centro padrão São Paulo, mas se ajustará ao GeoJSON)
+            const map = L.map('map-canvas').setView([-23.550520, -46.633308], 10);
+            currentMap = map;
+
+            // Adicionar Tile Layer (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Verificar se a obra tem dados GeoJSON salvos
+            if (o.geoJsonData) {
+                try {
+                    const geoJsonLayer = L.geoJSON(o.geoJsonData, {
+                        onEachFeature: function (feature, layer) {
+                            // Criar tabela de atributos para o popup
+                            if (feature.properties) {
+                                let popupContent = '<div style="max-height: 200px; overflow-y: auto;"><h4>Informações da Obra</h4><table class="cs-table" style="min-width: 200px;"><tbody>';
+                                for (const [key, value] of Object.entries(feature.properties)) {
+                                    popupContent += `<tr><td style="padding: 4px; font-weight:bold; font-size:0.8rem;">${key}</td><td style="padding: 4px; font-size:0.8rem;">${value}</td></tr>`;
+                                }
+                                popupContent += '</tbody></table></div>';
+                                layer.bindPopup(popupContent);
+                            }
+                        },
+                        style: function(feature) {
+                            // Estilo básico dependendo do tipo (opcional, pode ser melhorado)
+                            return { color: "#007bff", weight: 3 };
+                        }
+                    }).addTo(map);
+                    
+                    // Ajustar zoom para caber todos os elementos
+                    map.fitBounds(geoJsonLayer.getBounds());
+                } catch (e) {
+                    console.error("Erro ao renderizar GeoJSON:", e);
+                    // Fallback se o dado estiver corrompido
+                }
+            }
+        }
+
+        // Função para ler arquivo GeoJSON (Admin)
+        window.processarUploadGeoJSON = function(file, obraId) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const jsonContent = JSON.parse(e.target.result);
+                    const obra = database.obras.find(o => o.id === obraId);
+                    if (obra) {
+                        obra.geoJsonData = jsonContent; // Salva o objeto GeoJSON na estrutura
+                        salvarDados(false); // Salva no banco
+                        alert("Mapa carregado com sucesso! Atualizando visualização...");
+                        renderizarMapa(obra); // Re-renderiza o mapa imediatamente
+                    }
+                } catch (err) {
+                    alert("Erro ao ler arquivo GeoJSON. Certifique-se que é um JSON válido.");
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
         function mostrarPaginaObra(o){
              if (!o.dadosCostAD) o.dadosCostAD = { meta: 0, atual: 0 }; 
              const pI = calculatePercentage(o.dadosImobilizacao.atual, o.dadosImobilizacao.meta); 
@@ -359,6 +472,16 @@
              const vColetor = o.dadosAvanceFisico.coletor || 0;
              const vInterligacao = o.dadosAvanceFisico.interligacao || 0;
              const vRede = o.dadosAvanceFisico.rede || 0;
+
+             // HTML para controles de upload de mapa (apenas Admin)
+             const mapUploadControls = isAdmin ? `
+                <div class="map-upload-controls">
+                    <strong>Admin:</strong>
+                    <label>Carregar GeoJSON:</label>
+                    <input type="file" accept=".geojson, .json" onchange="window.processarUploadGeoJSON(this.files[0], '${o.id}')">
+                    <small style="color: #856404;">(Prefira arquivos .geojson leves)</small>
+                </div>
+             ` : '';
 
              contentArea.innerHTML = `
              <div class="content-header"><div><h1>${o.nomeCompleto}</h1><p>Acompanhamento detalhado.</p></div></div>
@@ -403,8 +526,22 @@
                 </section>
 
                 <section class="metric-card danger-zone" ${adminOnlyDisplay}><h3>Zona de Perigo</h3><p>A exclusão de um contrato é permanente.</p><button id="btn-excluir-contrato" data-obra-id="${o.id}">Excluir Contrato</button></section>
-             </div>`; 
+             </div>
              
+             <div class="map-wrapper">
+                <div class="map-header">
+                    <h3>Mapa de Obras (Execução)</h3>
+                </div>
+                ${mapUploadControls}
+                <div id="map-canvas"></div>
+             </div>
+             `; 
+             
+             // Renderizar mapa após inserir HTML
+             setTimeout(() => {
+                 renderizarMapa(o);
+             }, 100);
+
              if (isAdmin) { 
                  contentArea.querySelectorAll('input[type="text"]').forEach(i => { 
                      i.addEventListener('input', handleInputFormatting); 
