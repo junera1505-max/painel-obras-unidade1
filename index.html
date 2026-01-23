@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v30 (Tolerância Aumentada)</title>
+    <title>Sistema de Acompanhamento - v31 (Compressão de Mapas)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -429,9 +430,23 @@
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
-            if (o.geoJsonData) {
+            let geoJsonData = o.geoJsonData;
+
+            // LÓGICA DE DESCOMPRESSÃO AUTOMÁTICA
+            // Se o dado for uma string (está comprimido), descomprime antes de usar
+            if (typeof geoJsonData === 'string') {
                 try {
-                    const geoJsonLayer = L.geoJSON(o.geoJsonData, {
+                    const decompressed = LZString.decompressFromBase64(geoJsonData);
+                    geoJsonData = JSON.parse(decompressed);
+                } catch (e) {
+                    console.error("Erro ao descomprimir mapa:", e);
+                    return;
+                }
+            }
+
+            if (geoJsonData) {
+                try {
+                    const geoJsonLayer = L.geoJSON(geoJsonData, {
                         style: function(feature) {
                             let statusVal = "";
                             if (feature.properties) {
@@ -483,14 +498,12 @@
         }
 
         // ========================================================
-        //  ARQUITETURA: SANITIZAÇÃO DE GEOJSON (FIX: PAYLOAD SIZE)
+        //  ARQUITETURA: SANITIZAÇÃO + COMPRESSÃO LZ-STRING
         // ========================================================
         
         function limparGeoJSON(geojson) {
-            // Função para reduzir drasticamente o tamanho do GeoJSON
             if (!geojson || !geojson.features) return geojson;
             
-            // Helper para encontrar chave ignorando maiusculas/minusculas
             const findKey = (props, targets) => {
                 if(!props) return "";
                 const keys = Object.keys(props);
@@ -501,14 +514,12 @@
                 return "";
             };
 
-            // 1. Manter apenas STATUS, NOME_ATUAL e CONTRATO
             geojson.features.forEach(f => {
                 if (f.properties) {
                     const status = findKey(f.properties, ['STATUS', 'SITUACAO', 'Status']);
                     const nome = findKey(f.properties, ['NOME_ATUAL', 'NOME', 'TRECHO', 'Nome_Atual']);
                     const contrato = findKey(f.properties, ['CONTRATO', 'PACOTE', 'Contrato']);
                     
-                    // Substitui todo objeto properties por apenas o essencial
                     f.properties = { 
                         STATUS: status,
                         NOME_ATUAL: nome,
@@ -517,10 +528,9 @@
                 }
             });
 
-            // 2. Truncar coordenadas (Reduz bytes de precisão inútil)
             const truncarCoords = (coords) => {
                 if (typeof coords[0] === 'number') {
-                    return coords.map(c => Number(c.toFixed(5))); // 5 casas = ~1m de precisão (suficiente)
+                    return coords.map(c => Number(c.toFixed(5))); 
                 } else {
                     return coords.map(truncarCoords);
                 }
@@ -532,7 +542,6 @@
                 }
             });
 
-            // 3. Remover metadados globais (CRS, Name, etc)
             delete geojson.crs;
             delete geojson.name;
 
@@ -542,9 +551,9 @@
         window.processarUploadGeoJSON = function(file, obraId) {
             if (!file) return;
 
-            // Alerta prévio se arquivo for absurdamente grande (> 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                alert("ATENÇÃO: Este arquivo é muito grande (" + (file.size/1024/1024).toFixed(2) + "MB). Tente simplificar no QGIS antes.");
+            // Limite de upload inicial aumentado, pois vamos comprimir
+            if (file.size > 10 * 1024 * 1024) {
+                alert("Arquivo maior que 10MB. Simplifique no QGIS antes.");
                 return;
             }
 
@@ -553,28 +562,33 @@
                 try {
                     let jsonContent = JSON.parse(e.target.result);
                     
-                    // APLICA LIMPEZA AUTOMÁTICA
+                    // 1. Limpeza
                     jsonContent = limparGeoJSON(jsonContent);
 
-                    // Verificar tamanho após limpeza
+                    // 2. COMPRESSÃO (A SOLUÇÃO DEFINITIVA)
                     const jsonString = JSON.stringify(jsonContent);
-                    const sizeInBytes = new Blob([jsonString]).size;
+                    const compressedString = LZString.compressToBase64(jsonString);
                     
-                    // Tolerância AUMENTADA para 350KB
-                    if (sizeInBytes > 350 * 1024) { 
-                        alert(`ERRO: Mesmo após otimização, o mapa tem ${(sizeInBytes/1024).toFixed(0)}KB. O limite do banco é ~300KB.\n\nAção necessária: Abra o QGIS, vá em Vetor > Geometria > Simplificar e aumente a tolerância (ex: 0.0005).`);
+                    console.log(`Tamanho Original: ${(jsonString.length/1024).toFixed(2)} KB`);
+                    console.log(`Tamanho Comprimido: ${(compressedString.length/1024).toFixed(2)} KB`);
+
+                    // Verifica se comprimido cabe no banco (Limite aprox 350KB)
+                    if (compressedString.length > 350 * 1024) { 
+                        alert(`ERRO: O mapa é gigantesco. Mesmo comprimido tem ${(compressedString.length/1024).toFixed(0)}KB. Use a ferramenta 'Simplificar' do QGIS com tolerância 0.0005.`);
                         return;
                     }
 
                     const obra = database.obras.find(o => o.id === obraId);
                     if (obra) {
-                        obra.geoJsonData = jsonContent; 
+                        // Salva a string comprimida, não o JSON bruto
+                        obra.geoJsonData = compressedString; 
                         salvarDados(false); 
-                        alert("Mapa otimizado e carregado com sucesso! Atualizando visualização...");
-                        renderizarMapa(obra); 
+                        alert("Mapa comprimido e salvo com sucesso! O sistema irá recarregar.");
+                        // Recarrega para garantir que a descompressão funcione
+                        renderizarMapa(obra);
                     }
                 } catch (err) {
-                    alert("Erro ao ler arquivo GeoJSON. Certifique-se que é um JSON válido.");
+                    alert("Erro ao processar arquivo. Verifique se é um GeoJSON válido.");
                     console.error(err);
                 }
             };
@@ -602,7 +616,7 @@
                     <strong>Admin:</strong>
                     <label>Carregar GeoJSON:</label>
                     <input type="file" accept=".geojson, .json" onchange="window.processarUploadGeoJSON(this.files[0], '${o.id}')">
-                    <small style="color: #856404;">(O sistema tentará otimizar arquivos grandes automaticamente)</small>
+                    <small style="color: #856404;">(O sistema comprime os arquivos automaticamente)</small>
                 </div>
              ` : '';
 
@@ -683,6 +697,10 @@
              contentArea.innerHTML = `<div class="slideshow-wrapper"><div class="slideshow-header"><h1>Painel TV</h1><button class="fullscreen-button" title="Modo Tela Cheia">📺</button></div><div class="slideshow-content"></div><button class="exit-fullscreen-button">Sair</button></div>`; const sC = contentArea.querySelector('.slideshow-content'); sC.innerHTML = `<div class="panel-slide"><h2>Meta Imobilização 2025</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tI, aI, 'currency')}</div><div>Executado: <span>${formatCurrency(aI)}</span></div><div>Meta 2025: <span>${formatCurrency(tI)}</span></div><div>Meta Diária: <span>${formatCurrency(dIT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-imob"></div></div>` + `<div class="panel-slide"><h2>CostAD (Desembolso)</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pC > 100 ? 100 : pC.toFixed(2)}%; background-color: #0054a6;">${pC.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tC, aC, 'currency')}</div><div>Executado: <span>${formatCurrency(aC)}</span></div><div>Meta Total: <span>${formatCurrency(tC)}</span></div><div>Meta Diária: <span>${formatCurrency(dCT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-costad"></div></div>` + `<div class="panel-slide"><h2>Meta Economias 2026</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Faltam para Meta Global: <span>${formatUnits(tEMeta26)}</span></div><div>Alcançado: <span>${formatUnits(aE)}</span></div><div>Meta Global: <span>${formatUnits(GLOBAL_GOAL_ECONOMIAS)}</span></div><div>Meta Diária (Restante): <span>${formatUnits(dET)}</span></div><div>Dias Úteis: <span>${bDE}</span></div></div><div class="calendars" id="calendars-econ"></div></div>` + `<div class="panel-slide"><h2>Meta Avanço Físico 2026</h2><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Faltam para Meta Total: <span>${formatUnits(tAMeta26, 'm')}</span></div><div>Executado: <span>${formatUnits(aA, 'm')}</span></div><div>Meta Total: <span>${formatUnits(tAMetaTotal, 'm')}</span></div><div>Meta Diária (Restante): <span>${formatUnits(dAT, 'm')}</span></div><div>Dias Úteis: <span>${bDA}</span></div></div><div class="calendars" id="calendars-avance"></div></div>`; const { renderAllCalendars } = setupCalendarLogic(H); renderAllCalendars(today, eI, sC.querySelector('#calendars-imob')); renderAllCalendars(today, eI, sC.querySelector('#calendars-costad')); renderAllCalendars(today, eE, sC.querySelector('#calendars-econ')); renderAllCalendars(today, eA, sC.querySelector('#calendars-avance')); slides = sC.querySelectorAll('.panel-slide'); currentSlide = 0; if (slides.length > 0) { slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); } document.querySelector('.fullscreen-button').addEventListener('click', enterFullScreenMode); document.querySelector('.exit-fullscreen-button').addEventListener('click', exitFullScreenMode); document.addEventListener('keydown', handlePainelTVKeyPress); 
         }
         function setupCalendarLogic(h) { const holidaySet = new Set(h); function rM(y, m, gC, tED) { const localToday = new Date(); const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const fD = new Date(y, m, 1), dIM = new Date(y, m + 1, 0).getDate(), sDOW = fD.getDay(); let gCs = []; gCs.push('<div class="week-number-header"></div>'); ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].forEach(n => gCs.push(`<div class="day-name">${n}</div>`)); for (let i = 0; i < sDOW; i++) gCs.push('<div class="empty-day"></div>'); for (let d = 1; d <= dIM; d++) { const cD = new Date(Date.UTC(y, m, d)); const cDOW = cD.getUTCDay(); if (cDOW === 0) gCs.push(`<div class="week-number">${gWN(cD)}</div>`); let cls = ['day']; if (cD.getTime() === today.getTime()) { cls.push('today'); } else if (cD < today) { cls.push('past-day'); } if (cD.getTime() === tED.getTime()) { cls.push('end-date'); } else if (cD > today && cD <= tED) { const iso = cD.toISOString().split('T')[0]; if (holidaySet.has(iso)) cls.push('holiday'); else if (cDOW === 0 || cDOW === 6) cls.push('weekend'); else cls.push('future-workday'); } gCs.push(`<div class="${cls.join(' ')}"><span class="day-of-month">${d}</span></div>`); } gC.innerHTML = gCs.join(''); } function gWN(d) { d = new Date(d); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); const yS = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); const wN = Math.ceil((((d - yS) / 864e5) + 1) / 7); return wN; } return { renderAllCalendars: function (s, e, c) { if (!c) return; c.innerHTML = ''; const mN = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]; let cD = new Date(s.getUTCFullYear(), s.getUTCMonth(), 1); while (cD <= e) { const y = cD.getFullYear(), m = cD.getMonth(); const mC = document.createElement('div'); mC.className = 'month'; mC.innerHTML = `<h3>${mN[m]} ${y}</h3><div class="calendar-grid"></div>`; const cG = mC.querySelector('.calendar-grid'); rM(y, m, cG, e); c.appendChild(mC); cD.setMonth(cD.getMonth() + 1); } } }; }
+
+        // =========================================================================
+        // GLOBALS E CORREÇÕES (v15 e v16)
+        // =========================================================================
 
         window.handleInputFormatting = function(e) { 
             const i = e.target, t = i.dataset.tipo; 
