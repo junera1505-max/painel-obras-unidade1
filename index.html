@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v32 (Armazenamento Distribuído)</title>
+    <title>Sistema de Acompanhamento - v33 (Mapa Fullscreen)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
@@ -257,6 +257,12 @@
             align-items: center;
             margin-bottom: 5px;
         }
+        
+        /* Fullscreen styles for map */
+        #map-canvas:fullscreen {
+            width: 100%;
+            height: 100%;
+        }
 
         @media (max-width: 992px) {
             body, html { overflow-y: auto; overflow-x: hidden; }
@@ -397,10 +403,6 @@
                  </div>`; 
         }
 
-        // ==========================================
-        //  LÓGICA DE MAPA (ESTILO E LEGENDA)
-        // ==========================================
-        
         function normalizarTexto(texto) {
             if (!texto) return "";
             return texto.toString().trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -433,7 +435,6 @@
 
             let geoJsonData = null;
 
-            // 1. Tentar carregar do Bin separado (Arquitetura Nova)
             if (o.mapBinId) {
                 try {
                     const response = await fetch(`${JSONBIN_URL_BASE}/${o.mapBinId}`, { 
@@ -441,7 +442,6 @@
                     });
                     if (response.ok) {
                         const data = await response.json();
-                        // Descomprime
                         const compressed = data.record.compressedData;
                         const decompressed = LZString.decompressFromBase64(compressed);
                         geoJsonData = JSON.parse(decompressed);
@@ -450,7 +450,6 @@
                     console.error("Erro ao baixar mapa externo:", e);
                 }
             } 
-            // 2. Fallback: Tentar carregar do dado interno (Legado/Compressão Simples)
             else if (o.geoJsonData) {
                 let rawData = o.geoJsonData;
                 if (typeof rawData === 'string') {
@@ -492,6 +491,41 @@
                     
                     map.fitBounds(geoJsonLayer.getBounds());
 
+                    // Custom Control for Fullscreen
+                    L.Control.Fullscreen = L.Control.extend({
+                        onAdd: function(map) {
+                            const btn = L.DomUtil.create('a', 'leaflet-bar leaflet-control leaflet-control-custom');
+                            btn.innerHTML = '⛶'; // Ícone de expandir
+                            btn.title = "Tela Cheia";
+                            btn.style.backgroundColor = 'white';
+                            btn.style.width = '30px';
+                            btn.style.height = '30px';
+                            btn.style.lineHeight = '30px';
+                            btn.style.textAlign = 'center';
+                            btn.style.cursor = 'pointer';
+                            btn.style.fontSize = '18px';
+                            btn.style.fontWeight = 'bold';
+                            btn.style.color = '#333';
+                            btn.style.textDecoration = 'none';
+                            btn.style.display = 'block';
+
+                            btn.onclick = function(e) {
+                                e.preventDefault();
+                                const mapContainer = document.getElementById('map-canvas');
+                                if (!document.fullscreenElement) {
+                                    mapContainer.requestFullscreen().catch(err => {
+                                        alert(`Erro ao entrar em tela cheia: ${err.message}`);
+                                    });
+                                } else {
+                                    document.exitFullscreen();
+                                }
+                            };
+                            return btn;
+                        }
+                    });
+
+                    new L.Control.Fullscreen({ position: 'topleft' }).addTo(map);
+
                     const legend = L.control({position: 'bottomright'});
                     legend.onAdd = function (map) {
                         const div = L.DomUtil.create('div', 'info legend');
@@ -515,11 +549,14 @@
                 }
             }
         }
-
-        // ========================================================
-        //  ARQUITETURA: SANITIZAÇÃO + COMPRESSÃO + ARMAZENAMENTO DISTRIBUÍDO
-        // ========================================================
         
+        // Listener para redimensionar o mapa corretamente ao entrar/sair de fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            if (currentMap) {
+                setTimeout(() => { currentMap.invalidateSize(); }, 200);
+            }
+        });
+
         function limparGeoJSON(geojson) {
             if (!geojson || !geojson.features) return geojson;
             
@@ -579,18 +616,11 @@
             reader.onload = async function(e) {
                 try {
                     let jsonContent = JSON.parse(e.target.result);
-                    
-                    // 1. Limpeza
                     jsonContent = limparGeoJSON(jsonContent);
-
-                    // 2. Compressão
                     const jsonString = JSON.stringify(jsonContent);
                     const compressedString = LZString.compressToBase64(jsonString);
-                    
                     console.log(`Tamanho Comprimido: ${(compressedString.length/1024).toFixed(2)} KB`);
 
-                    // 3. NOVO: Criar um Bin separado no JSONBin
-                    // Isso permite salvar mapas grandes sem travar o banco principal
                     const novoBinData = { compressedData: compressedString, obraId: obraId };
                     
                     alert("Enviando mapa para armazenamento externo... aguarde.");
@@ -600,7 +630,7 @@
                         headers: {
                             'Content-Type': 'application/json',
                             'X-Master-Key': API_KEY,
-                            'X-Bin-Private': 'false' // ou true, se preferir
+                            'X-Bin-Private': 'false' 
                         },
                         body: JSON.stringify(novoBinData)
                     });
@@ -611,13 +641,10 @@
 
                     const obra = database.obras.find(o => o.id === obraId);
                     if (obra) {
-                        // Limpa dados antigos internos para liberar espaço
                         delete obra.geoJsonData;
-                        // Salva apenas o ID externo
                         obra.mapBinId = newBinId;
-                        
                         salvarDados(false); 
-                        alert("Mapa salvo em armazenamento distribuído com sucesso! ID: " + newBinId);
+                        alert("Mapa salvo com sucesso! ID: " + newBinId);
                         renderizarMapa(obra);
                     }
 
@@ -731,6 +758,10 @@
              contentArea.innerHTML = `<div class="slideshow-wrapper"><div class="slideshow-header"><h1>Painel TV</h1><button class="fullscreen-button" title="Modo Tela Cheia">📺</button></div><div class="slideshow-content"></div><button class="exit-fullscreen-button">Sair</button></div>`; const sC = contentArea.querySelector('.slideshow-content'); sC.innerHTML = `<div class="panel-slide"><h2>Meta Imobilização 2025</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tI, aI, 'currency')}</div><div>Executado: <span>${formatCurrency(aI)}</span></div><div>Meta 2025: <span>${formatCurrency(tI)}</span></div><div>Meta Diária: <span>${formatCurrency(dIT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-imob"></div></div>` + `<div class="panel-slide"><h2>CostAD (Desembolso)</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pC > 100 ? 100 : pC.toFixed(2)}%; background-color: #0054a6;">${pC.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tC, aC, 'currency')}</div><div>Executado: <span>${formatCurrency(aC)}</span></div><div>Meta Total: <span>${formatCurrency(tC)}</span></div><div>Meta Diária: <span>${formatCurrency(dCT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-costad"></div></div>` + `<div class="panel-slide"><h2>Meta Economias 2026</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Faltam para Meta Global: <span>${formatUnits(tEMeta26)}</span></div><div>Alcançado: <span>${formatUnits(aE)}</span></div><div>Meta Global: <span>${formatUnits(GLOBAL_GOAL_ECONOMIAS)}</span></div><div>Meta Diária (Restante): <span>${formatUnits(dET)}</span></div><div>Dias Úteis: <span>${bDE}</span></div></div><div class="calendars" id="calendars-econ"></div></div>` + `<div class="panel-slide"><h2>Meta Avanço Físico 2026</h2><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Faltam para Meta Total: <span>${formatUnits(tAMeta26, 'm')}</span></div><div>Executado: <span>${formatUnits(aA, 'm')}</span></div><div>Meta Total: <span>${formatUnits(tAMetaTotal, 'm')}</span></div><div>Meta Diária (Restante): <span>${formatUnits(dAT, 'm')}</span></div><div>Dias Úteis: <span>${bDA}</span></div></div><div class="calendars" id="calendars-avance"></div></div>`; const { renderAllCalendars } = setupCalendarLogic(H); renderAllCalendars(today, eI, sC.querySelector('#calendars-imob')); renderAllCalendars(today, eI, sC.querySelector('#calendars-costad')); renderAllCalendars(today, eE, sC.querySelector('#calendars-econ')); renderAllCalendars(today, eA, sC.querySelector('#calendars-avance')); slides = sC.querySelectorAll('.panel-slide'); currentSlide = 0; if (slides.length > 0) { slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); } document.querySelector('.fullscreen-button').addEventListener('click', enterFullScreenMode); document.querySelector('.exit-fullscreen-button').addEventListener('click', exitFullScreenMode); document.addEventListener('keydown', handlePainelTVKeyPress); 
         }
         function setupCalendarLogic(h) { const holidaySet = new Set(h); function rM(y, m, gC, tED) { const localToday = new Date(); const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const fD = new Date(y, m, 1), dIM = new Date(y, m + 1, 0).getDate(), sDOW = fD.getDay(); let gCs = []; gCs.push('<div class="week-number-header"></div>'); ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].forEach(n => gCs.push(`<div class="day-name">${n}</div>`)); for (let i = 0; i < sDOW; i++) gCs.push('<div class="empty-day"></div>'); for (let d = 1; d <= dIM; d++) { const cD = new Date(Date.UTC(y, m, d)); const cDOW = cD.getUTCDay(); if (cDOW === 0) gCs.push(`<div class="week-number">${gWN(cD)}</div>`); let cls = ['day']; if (cD.getTime() === today.getTime()) { cls.push('today'); } else if (cD < today) { cls.push('past-day'); } if (cD.getTime() === tED.getTime()) { cls.push('end-date'); } else if (cD > today && cD <= tED) { const iso = cD.toISOString().split('T')[0]; if (holidaySet.has(iso)) cls.push('holiday'); else if (cDOW === 0 || cDOW === 6) cls.push('weekend'); else cls.push('future-workday'); } gCs.push(`<div class="${cls.join(' ')}"><span class="day-of-month">${d}</span></div>`); } gC.innerHTML = gCs.join(''); } function gWN(d) { d = new Date(d); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); const yS = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); const wN = Math.ceil((((d - yS) / 864e5) + 1) / 7); return wN; } return { renderAllCalendars: function (s, e, c) { if (!c) return; c.innerHTML = ''; const mN = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]; let cD = new Date(s.getUTCFullYear(), s.getUTCMonth(), 1); while (cD <= e) { const y = cD.getFullYear(), m = cD.getMonth(); const mC = document.createElement('div'); mC.className = 'month'; mC.innerHTML = `<h3>${mN[m]} ${y}</h3><div class="calendar-grid"></div>`; const cG = mC.querySelector('.calendar-grid'); rM(y, m, cG, e); c.appendChild(mC); cD.setMonth(cD.getMonth() + 1); } } }; }
+
+        // =========================================================================
+        // GLOBALS E CORREÇÕES (v15 e v16)
+        // =========================================================================
 
         window.handleInputFormatting = function(e) { 
             const i = e.target, t = i.dataset.tipo; 
@@ -1072,7 +1103,7 @@
         function calcularHistoricoAgregado(obras) { const agregados = { Imobilização: {}, Economia: {}, Avanço: {}, CostAD: {} }; const tipos = [ { key: 'dadosImobilizacao', nome: 'Imobilização' }, { key: 'dadosEconomia', nome: 'Economia' }, { key: 'dadosAvanceFisico', nome: 'Avanço' }, { key: 'dadosCostAD', nome: 'CostAD' } ]; for (const obra of obras) { for (const tipo of tipos) { const hist = obra[tipo.key]?.historico; if (hist && hist.length > 0) { for (const item of hist) { const { mes, meta, realizado } = item; if (!agregados[tipo.nome][mes]) { agregados[tipo.nome][mes] = { mes: mes, meta: 0, realizado: 0 }; } agregados[tipo.nome][mes].meta += meta || 0; agregados[tipo.nome][mes].realizado += realizado || 0; } } } } const obraEml2 = { id: 'coord-eml-2', nomeCurto: 'Coordenação EML 2', nomeCompleto: 'Coordenação EML 2', dadosImobilizacao: { historico: Object.values(agregados.Imobilização) }, dadosEconomia: { historico: Object.values(agregados.Economia) }, dadosAvanceFisico: { historico: Object.values(agregados.Avanço) }, dadosCostAD: { historico: Object.values(agregados.CostAD) } }; return obraEml2; }
         function mostrarMetasAcumuladas(obras) { contentArea.innerHTML = `<div class="content-header"><div><h1>Metas Acumuladas</h1><p>Histórico mensal de todos os contratos.</p></div><button id="btn-export-csv" class="btn-primary" style="background-color: #28a745;">📊 Exportar CSV</button></div><div class="dashboard-grid" id="container-metas-acumuladas"></div>`; const container = document.getElementById('container-metas-acumuladas'); if (!container) return; const obraEml2 = calcularHistoricoAgregado(obras); const todasAsObras = [obraEml2, ...obras]; const ordemDosCards = ["Coordenação EML 2", "1B1", "1A2", "1B2", "1A1", "6A", "17B", "17A"]; const ordemMap = new Map(ordemDosCards.map((nome, index) => [nome, index])); const getSortIndex = (obra) => { if (obra.nomeCurto === "Coordenação EML 2") return 0; const sufixo = obra.nomeCurto.split(' ').pop(); return ordemMap.has(sufixo) ? ordemMap.get(sufixo) : Infinity; }; const obrasOrdenadas = todasAsObras.sort((a, b) => { const indexA = getSortIndex(a); const indexB = getSortIndex(b); if (indexA === Infinity && indexB === Infinity) return a.nomeCurto.localeCompare(b.nomeCurto); return indexA - indexB; }); if (obrasOrdenadas.length === 0) { container.innerHTML = '<p>Nenhum contrato cadastrado.</p>'; return; } for (const obra of obrasOrdenadas) { const card = document.createElement('section'); card.className = 'metric-card progress-card'; const histImob = obra.dadosImobilizacao?.historico; const histEcon = obra.dadosEconomia?.historico; const histAvanc = obra.dadosAvanceFisico?.historico; const histCostAD = obra.dadosCostAD?.historico; card.innerHTML = `<h3>${obra.nomeCompleto || obra.nomeCurto}</h3><h4 style="margin-top: 15px; margin-bottom: 10px;">Histórico de Imobilização (R$)</h4>${renderizarHistoricoTabela(histImob, 'currency')}<h4 style="margin-top: 20px; margin-bottom: 10px;">Histórico CostAD (R$)</h4>${renderizarHistoricoTabela(histCostAD, 'currency')}<h4 style="margin-top: 20px; margin-bottom: 10px;">Histórico de Economias (Un.)</h4>${renderizarHistoricoTabela(histEcon, 'units')}<h4 style="margin-top: 20px; margin-bottom: 10px;">Histórico de Avanço Físico (m)</h4>${renderizarHistoricoTabela(histAvanc, 'units')}`; container.appendChild(card); } document.getElementById('btn-export-csv').addEventListener('click', () => exportarParaCSV(obrasOrdenadas)); }
         function renderizarHistoricoTabela(historico, tipoValor) { if (!historico || historico.length === 0) { return '<p style="font-size: 0.9rem; color: #6c757d; margin: 0;">Nenhum histórico lançado para este item.</p>'; } const formatFn = (tipoValor === 'currency') ? formatCurrency : formatUnits; const historicoOrdenado = [...historico].sort((a, b) => a.mes.localeCompare(b.mes)); let totalMeta = 0; let totalRealizado = 0; let tabelaHtml = `<div class="cs-table-wrapper" style="max-height: 300px; overflow-y: auto;"><table class="cs-table" style="min-width: 0; white-space: nowrap;"><thead><tr><th>Mês/Ano</th><th>Meta</th><th>Realizado</th><th>Diferença</th></tr></thead><tbody>`; for (const item of historicoOrdenado) { const meta = item.meta || 0; const realizado = item.realizado || 0; const diff = realizado - meta; totalMeta += meta; totalRealizado += realizado; let diffClass = ''; if (diff > 0) diffClass = 'goal-surpassed'; if (diff < 0) diffClass = 'prazo-vencido'; tabelaHtml += `<tr><td>${item.mes.replace('-', '/')}</td><td>${formatFn(meta)}</td><td>${formatFn(realizado)}</td><td style="font-weight: 600;" class="${diffClass}">${formatFn(diff)}</td></tr>`; } const totalDiff = totalRealizado - totalMeta; let diffClassTotal = ''; if (totalDiff > 0) diffClassTotal = 'goal-surpassed'; if (totalDiff < 0) diffClassTotal = 'prazo-vencido'; tabelaHtml += `<tr style="background-color: #f8faff; border-top: 2px solid #dbe3f0;"><td style="font-weight: 700;">Total</td><td style="font-weight: 700;">${formatFn(totalMeta)}</td><td style="font-weight: 700;">${formatFn(totalRealizado)}</td><td style="font-weight: 700;" class="${diffClassTotal}">${formatFn(totalDiff)}</td></tr>`; tabelaHtml += `</tbody></table></div>`; return tabelaHtml; }
-        function exportarParaCSV(obrasOrdenadas) { console.log("Iniciando exportação CSV..."); const allMonths = new Set(); const dataMatrix = {}; const tipos = [ { key: 'dadosImobilizacao', nome: 'Imobilização' }, { key: 'dadosEconomia', nome: 'Economia' }, { key: 'dadosAvanceFisico', nome: 'Avanço Físico' }, { key: 'dadosCostAD', nome: 'CostAD' } ]; const metricas = [ "Imobilização Projetada", "Imobilização Realizada", "Economia Projetada", "Economia Realizada", "Avanço Físico Projetado", "Avanço Físico Realizado", "CostAD Projetado", "CostAD Realizado" ]; for (const obra of obrasOrdenadas) { const obraName = obra.nomeCurto; dataMatrix[obraName] = {}; for (const metrica of metricas) { dataMatrix[obraName][metrica] = {}; } for (const tipo of tipos) { const hist = obra[tipo.key]?.historico; if (hist) { for (const item of hist) { allMonths.add(item.mes); dataMatrix[obraName][tipo.nome + ' Projetada'][item.mes] = item.meta || 0; dataMatrix[obraName][tipo.nome + ' Realizada'][item.mes] = item.realizado || 0; } } } } const sortedMonths = Array.from(allMonths).sort(); const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const headerMeses = sortedMonths.map(mes => { const [year, month] = mes.split('-'); return `${monthNames[parseInt(month, 10) - 1]}/${year}`; }); const header = ["Contrato", "Métrica", ...headerMeses]; let csvContent = []; csvContent.push(header.join(';')); for (const obra of obrasOrdenadas) { const obraName = obra.nomeCurto; for (const metrica of metricas) { let row = [obraName, metrica]; for (const month of sortedMonths) { const valor = dataMatrix[obraName][metrica][month] || 0; row.push(valor); } csvContent.push(row.join(';')); } csvContent.push(''); } const csvString = '\uFEFF' + csvContent.join('\n'); const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); if (link.download !== undefined) { const url = URL.createObjectURL(blob); link.setAttribute("href", url); link.setAttribute("download", "relatorio_metas_acumuladas.csv"); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); } }
+        function exportarParaCSV(obrasOrdenadas) { console.log("Iniciando exportação CSV..."); const allMonths = new Set(); const dataMatrix = {}; const tipos = [ { key: 'dadosImobilizacao', nome: 'Imobilização' }, { key: 'dadosEconomia', nome: 'Economia' }, { key: 'dadosAvanceFisico', nome: 'Avanço' }, { key: 'dadosCostAD', nome: 'CostAD' } ]; const metricas = [ "Imobilização Projetada", "Imobilização Realizada", "Economia Projetada", "Economia Realizada", "Avanço Físico Projetado", "Avanço Físico Realizado", "CostAD Projetado", "CostAD Realizado" ]; for (const obra of obrasOrdenadas) { const obraName = obra.nomeCurto; dataMatrix[obraName] = {}; for (const metrica of metricas) { dataMatrix[obraName][metrica] = {}; } for (const tipo of tipos) { const hist = obra[tipo.key]?.historico; if (hist) { for (const item of hist) { allMonths.add(item.mes); dataMatrix[obraName][tipo.nome + ' Projetada'][item.mes] = item.meta || 0; dataMatrix[obraName][tipo.nome + ' Realizada'][item.mes] = item.realizado || 0; } } } } const sortedMonths = Array.from(allMonths).sort(); const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const headerMeses = sortedMonths.map(mes => { const [year, month] = mes.split('-'); return `${monthNames[parseInt(month, 10) - 1]}/${year}`; }); const header = ["Contrato", "Métrica", ...headerMeses]; let csvContent = []; csvContent.push(header.join(';')); for (const obra of obrasOrdenadas) { const obraName = obra.nomeCurto; for (const metrica of metricas) { let row = [obraName, metrica]; for (const month of sortedMonths) { const valor = dataMatrix[obraName][metrica][month] || 0; row.push(valor); } csvContent.push(row.join(';')); } csvContent.push(''); } const csvString = '\uFEFF' + csvContent.join('\n'); const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); if (link.download !== undefined) { const url = URL.createObjectURL(blob); link.setAttribute("href", url); link.setAttribute("download", "relatorio_metas_acumuladas.csv"); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); } }
         function gerarTextoHistorico(obras) { let output = []; const tipos = [ { key: 'dadosImobilizacao', nome: 'Imobilização' }, { key: 'dadosCostAD', nome: 'CostAD' }, { key: 'dadosEconomia', nome: 'Economia' }, { key: 'dadosAvanceFisico', nome: 'Avanço' } ]; const ordemDosCards = ["1B1", "1A2", "1B2", "1A1", "6A", "17B", "17A"]; const ordemMap = new Map(ordemDosCards.map((nome, index) => [nome, index])); const getSortIndex = (obra) => { const sufixo = obra.nomeCurto.split(' ').pop(); return ordemMap.has(sufixo) ? ordemMap.get(sufixo) : Infinity; }; const obrasOrdenadas = [...obras].sort((a, b) => { const indexA = getSortIndex(a); const indexB = getSortIndex(b); if (indexA === Infinity && indexB === Infinity) { return a.nomeCurto.localeCompare(b.nomeCurto); } return indexA - indexB; }); for (const obra of obrasOrdenadas) { output.push(`\n# ${obra.nomeCurto}`); let hasEntries = false; for (const tipo of tipos) { const dados = obra[tipo.key]; if (dados && dados.historico && dados.historico.length > 0) { dados.historico.sort((a,b) => a.mes.localeCompare(b.mes)); for (const item of dados.historico) { output.push(`${tipo.nome}, ${item.mes}, ${item.meta || 0}, ${item.realizado || 0}`); hasEntries = true; } } } if (!hasEntries) output.push(`(Nenhum histórico lançado)`); } return output.join('\n').trim(); }
         function handleSalvarHistorico() { const text = document.getElementById('historico-textarea').value; const lines = text.split('\n'); let currentObra = null; if (!confirm("Tem certeza que deseja salvar? Isso irá sobrescrever o histórico existente.")) { return; } for (const obra of database.obras) { if (obra.dadosImobilizacao) obra.dadosImobilizacao.historico = []; if (obra.dadosEconomia) obra.dadosEconomia.historico = []; if (obra.dadosAvanceFisico) obra.dadosAvanceFisico.historico = []; if (!obra.dadosCostAD) obra.dadosCostAD = {}; obra.dadosCostAD.historico = []; } for (const line of lines) { const trimmedLine = line.trim(); if (trimmedLine.startsWith('#')) { const nomeCurto = trimmedLine.substring(1).trim(); currentObra = database.obras.find(o => o.nomeCurto === nomeCurto); if (!currentObra) console.warn(`Obra não encontrada: ${nomeCurto}`); continue; } if (!currentObra || trimmedLine === "" || trimmedLine.startsWith('(')) { continue; } const parts = trimmedLine.split(',').map(s => s.trim()); if (parts.length !== 4) { console.warn(`Linha mal formatada: ${trimmedLine}`); continue; } const [tipo, mes, metaStr, realizadoStr] = parts; const meta = parseFloat(metaStr) || 0; const realizado = parseFloat(realizadoStr) || 0; if (!/^\d{4}-\d{2}$/.test(mes)) { console.warn(`Formato de mês inválido: ${mes}. Use YYYY-MM.`); continue; } const newItem = { mes, meta, realizado }; let targetArray = null; if (tipo.toLowerCase().startsWith('imobil')) { if (!currentObra.dadosImobilizacao) currentObra.dadosImobilizacao = {}; if (!currentObra.dadosImobilizacao.historico) currentObra.dadosImobilizacao.historico = []; targetArray = currentObra.dadosImobilizacao.historico; } else if (tipo.toLowerCase().startsWith('econ')) { if (!currentObra.dadosEconomia) currentObra.dadosEconomia = {}; if (!currentObra.dadosEconomia.historico) currentObra.dadosEconomia.historico = []; targetArray = currentObra.dadosEconomia.historico; } else if (tipo.toLowerCase().startsWith('avan')) { if (!currentObra.dadosAvanceFisico) currentObra.dadosAvanceFisico = {}; if (!currentObra.dadosAvanceFisico.historico) currentObra.dadosAvanceFisico.historico = []; targetArray = currentObra.dadosAvanceFisico.historico; } else if (tipo.toLowerCase().startsWith('cost')) { if (!currentObra.dadosCostAD) currentObra.dadosCostAD = {}; if (!currentObra.dadosCostAD.historico) currentObra.dadosCostAD.historico = []; targetArray = currentObra.dadosCostAD.historico; } else { console.warn(`Tipo desconhecido: ${tipo}`); continue; } targetArray.push(newItem); } console.log("Database atualizado com histórico:", database); alert("Histórico processado. Salvando no banco..."); salvarDados(true); }
         function mostrarPaginaHistorico() { if (!isAdmin) { contentArea.innerHTML = `<div class="content-header"><h1>Acesso Negado</h1><p>Esta área é restrita.</p></div>`; return; } let currentText = gerarTextoHistorico(database.obras); contentArea.innerHTML = `<div class="content-header"><div><h1>Lançar Histórico Mensal</h1><p>Use o formato abaixo. O salvamento <strong>sobrescreve todo</strong> o histórico anterior.</p></div></div><div class="metric-card"><h3>Instruções</h3><ul style="font-size: 0.9rem;"><li>Linhas com <code># Nome do Contrato</code> definem qual contrato os dados abaixo pertencem. (Ex: <code># Pacote 17A</code>)</li><li>Linhas de dados devem ter o formato: <code>TIPO, YYYY-MM, META, REALIZADO</code></li><li><strong>Tipos válidos:</strong> <code>Imobilização</code>, <code>Economia</code>, <code>Avanço</code>, <code>CostAD</code>.</li><li><strong>Exemplo:</strong> <code>CostAD, 2025-03, 10000, 12000</code></li></ul><textarea id="historico-textarea" style="width: 100%; height: 50vh; font-family: 'Courier New', Courier, monospace; font-size: 14px; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">${currentText}</textarea><div style="text-align: right; margin-top: 20px;"><button id="btn-salvar-historico" class="btn-primary" style="background-color: #c82333;">Salvar e Sobrescrever Histórico</button></div></div>`; document.getElementById('btn-salvar-historico').addEventListener('click', handleSalvarHistorico); }
@@ -1103,7 +1134,7 @@
 
         async function carregarDados() { 
             try { 
-                const r = await fetch(`${JSONBIN_URL_BASE}/${MASTER_BIN_ID}`, { headers: { 'X-Master-Key': API_KEY } }); 
+                const r = await fetch(JSONBIN_URL_BASE + '/' + MASTER_BIN_ID, { headers: { 'X-Master-Key': API_KEY } }); 
                 if (!r.ok) throw new Error(`Falha na rede: ${r.status}`); 
                 const d = await r.json(); 
                 database = d.record; 
@@ -1121,7 +1152,7 @@
         }
 
         let saveTimeout;
-        function salvarDados(fU = false) { if (!isAdmin) { console.warn("Modo de leitura. Salvamento bloqueado."); return; } clearTimeout(saveTimeout); saveTimeout = setTimeout(async () => { console.log("Salvando..."); try { const r = await fetch(`${JSONBIN_URL_BASE}/${MASTER_BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY }, body: JSON.stringify(database) }); if (!r.ok) throw new Error('Falha ao salvar.'); console.log("Salvo!"); if (fU) { const aL = navList.querySelector('a.active'); if (aL) aL.click(); } } catch (e) { console.error("Erro ao salvar:", e); alert("Não foi possível salvar."); } }, 1500); }
+        function salvarDados(fU = false) { if (!isAdmin) { console.warn("Modo de leitura. Salvamento bloqueado."); return; } clearTimeout(saveTimeout); saveTimeout = setTimeout(async () => { console.log("Salvando..."); try { const r = await fetch(JSONBIN_URL_BASE + '/' + MASTER_BIN_ID, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY }, body: JSON.stringify(database) }); if (!r.ok) throw new Error('Falha ao salvar.'); console.log("Salvo!"); if (fU) { const aL = navList.querySelector('a.active'); if (aL) aL.click(); } } catch (e) { console.error("Erro ao salvar:", e); alert("Não foi possível salvar."); } }, 1500); }
         function handleNavClick(e) { 
             e.preventDefault(); 
             document.removeEventListener('keydown', handlePainelTVKeyPress); 
