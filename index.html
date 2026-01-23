@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v31 (Compressão de Mapas)</title>
+    <title>Sistema de Acompanhamento - v32 (Armazenamento Distribuído)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
@@ -322,14 +322,15 @@
     <script>
     let isAdmin = false;
     const GLOBAL_GOAL_ECONOMIAS = 168000;
-    // Variável para armazenar a instância do mapa atual
     let currentMap = null; 
 
     document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         isAdmin = urlParams.get('modo') === 'edicao'; 
-        const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/68e8e81ad0ea881f409c51f0'; 
+        const JSONBIN_URL_BASE = 'https://api.jsonbin.io/v3/b';
+        const MASTER_BIN_ID = '68e8e81ad0ea881f409c51f0';
         const API_KEY = '$2a$10$L4n/qlQ8LGkgQmd9p7zhaOAK6j5pgA.2Tq7xK019hUqDGNfPmqJ5O'; 
+        
         let database = { obras: [], comuniqueses: [] };
         let slideshowInterval = null;
         let currentSlide = 0;
@@ -414,7 +415,7 @@
             return '#3388ff'; // Azul padrão (fallback)
         }
 
-        function renderizarMapa(o) {
+        async function renderizarMapa(o) {
             if (currentMap) {
                 currentMap.remove();
                 currentMap = null;
@@ -430,17 +431,35 @@
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
-            let geoJsonData = o.geoJsonData;
+            let geoJsonData = null;
 
-            // LÓGICA DE DESCOMPRESSÃO AUTOMÁTICA
-            // Se o dado for uma string (está comprimido), descomprime antes de usar
-            if (typeof geoJsonData === 'string') {
+            // 1. Tentar carregar do Bin separado (Arquitetura Nova)
+            if (o.mapBinId) {
                 try {
-                    const decompressed = LZString.decompressFromBase64(geoJsonData);
-                    geoJsonData = JSON.parse(decompressed);
+                    const response = await fetch(`${JSONBIN_URL_BASE}/${o.mapBinId}`, { 
+                        headers: { 'X-Master-Key': API_KEY } 
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Descomprime
+                        const compressed = data.record.compressedData;
+                        const decompressed = LZString.decompressFromBase64(compressed);
+                        geoJsonData = JSON.parse(decompressed);
+                    }
                 } catch (e) {
-                    console.error("Erro ao descomprimir mapa:", e);
-                    return;
+                    console.error("Erro ao baixar mapa externo:", e);
+                }
+            } 
+            // 2. Fallback: Tentar carregar do dado interno (Legado/Compressão Simples)
+            else if (o.geoJsonData) {
+                let rawData = o.geoJsonData;
+                if (typeof rawData === 'string') {
+                    try {
+                        const decompressed = LZString.decompressFromBase64(rawData);
+                        geoJsonData = JSON.parse(decompressed);
+                    } catch (e) { console.error(e); }
+                } else {
+                    geoJsonData = rawData;
                 }
             }
 
@@ -498,7 +517,7 @@
         }
 
         // ========================================================
-        //  ARQUITETURA: SANITIZAÇÃO + COMPRESSÃO LZ-STRING
+        //  ARQUITETURA: SANITIZAÇÃO + COMPRESSÃO + ARMAZENAMENTO DISTRIBUÍDO
         // ========================================================
         
         function limparGeoJSON(geojson) {
@@ -551,44 +570,59 @@
         window.processarUploadGeoJSON = function(file, obraId) {
             if (!file) return;
 
-            // Limite de upload inicial aumentado, pois vamos comprimir
-            if (file.size > 10 * 1024 * 1024) {
-                alert("Arquivo maior que 10MB. Simplifique no QGIS antes.");
+            if (file.size > 15 * 1024 * 1024) {
+                alert("Arquivo maior que 15MB. Simplifique no QGIS antes.");
                 return;
             }
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     let jsonContent = JSON.parse(e.target.result);
                     
                     // 1. Limpeza
                     jsonContent = limparGeoJSON(jsonContent);
 
-                    // 2. COMPRESSÃO (A SOLUÇÃO DEFINITIVA)
+                    // 2. Compressão
                     const jsonString = JSON.stringify(jsonContent);
                     const compressedString = LZString.compressToBase64(jsonString);
                     
-                    console.log(`Tamanho Original: ${(jsonString.length/1024).toFixed(2)} KB`);
                     console.log(`Tamanho Comprimido: ${(compressedString.length/1024).toFixed(2)} KB`);
 
-                    // Verifica se comprimido cabe no banco (Limite aprox 350KB)
-                    if (compressedString.length > 350 * 1024) { 
-                        alert(`ERRO: O mapa é gigantesco. Mesmo comprimido tem ${(compressedString.length/1024).toFixed(0)}KB. Use a ferramenta 'Simplificar' do QGIS com tolerância 0.0005.`);
-                        return;
-                    }
+                    // 3. NOVO: Criar um Bin separado no JSONBin
+                    // Isso permite salvar mapas grandes sem travar o banco principal
+                    const novoBinData = { compressedData: compressedString, obraId: obraId };
+                    
+                    alert("Enviando mapa para armazenamento externo... aguarde.");
+                    
+                    const response = await fetch(JSONBIN_URL_BASE, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': API_KEY,
+                            'X-Bin-Private': 'false' // ou true, se preferir
+                        },
+                        body: JSON.stringify(novoBinData)
+                    });
+
+                    if (!response.ok) throw new Error("Erro ao criar Bin externo.");
+                    const result = await response.json();
+                    const newBinId = result.metadata.id;
 
                     const obra = database.obras.find(o => o.id === obraId);
                     if (obra) {
-                        // Salva a string comprimida, não o JSON bruto
-                        obra.geoJsonData = compressedString; 
+                        // Limpa dados antigos internos para liberar espaço
+                        delete obra.geoJsonData;
+                        // Salva apenas o ID externo
+                        obra.mapBinId = newBinId;
+                        
                         salvarDados(false); 
-                        alert("Mapa comprimido e salvo com sucesso! O sistema irá recarregar.");
-                        // Recarrega para garantir que a descompressão funcione
+                        alert("Mapa salvo em armazenamento distribuído com sucesso! ID: " + newBinId);
                         renderizarMapa(obra);
                     }
+
                 } catch (err) {
-                    alert("Erro ao processar arquivo. Verifique se é um GeoJSON válido.");
+                    alert("Erro ao processar/enviar arquivo: " + err.message);
                     console.error(err);
                 }
             };
@@ -616,7 +650,7 @@
                     <strong>Admin:</strong>
                     <label>Carregar GeoJSON:</label>
                     <input type="file" accept=".geojson, .json" onchange="window.processarUploadGeoJSON(this.files[0], '${o.id}')">
-                    <small style="color: #856404;">(O sistema comprime os arquivos automaticamente)</small>
+                    <small style="color: #0054a6;">(Armazenamento Distribuído Ativado: Limite Virtualmente Infinito)</small>
                 </div>
              ` : '';
 
@@ -697,10 +731,6 @@
              contentArea.innerHTML = `<div class="slideshow-wrapper"><div class="slideshow-header"><h1>Painel TV</h1><button class="fullscreen-button" title="Modo Tela Cheia">📺</button></div><div class="slideshow-content"></div><button class="exit-fullscreen-button">Sair</button></div>`; const sC = contentArea.querySelector('.slideshow-content'); sC.innerHTML = `<div class="panel-slide"><h2>Meta Imobilização 2025</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pI > 100 ? 100 : pI.toFixed(2)}%;">${pI.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tI, aI, 'currency')}</div><div>Executado: <span>${formatCurrency(aI)}</span></div><div>Meta 2025: <span>${formatCurrency(tI)}</span></div><div>Meta Diária: <span>${formatCurrency(dIT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-imob"></div></div>` + `<div class="panel-slide"><h2>CostAD (Desembolso)</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pC > 100 ? 100 : pC.toFixed(2)}%; background-color: #0054a6;">${pC.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>${formatarValorFaltante(tC, aC, 'currency')}</div><div>Executado: <span>${formatCurrency(aC)}</span></div><div>Meta Total: <span>${formatCurrency(tC)}</span></div><div>Meta Diária: <span>${formatCurrency(dCT)}</span></div><div>Dias Úteis: <span>${bDI}</span></div></div><div class="calendars" id="calendars-costad"></div></div>` + `<div class="panel-slide"><h2>Meta Economias 2026</h2><div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pE > 100 ? 100 : pE.toFixed(2)}%;background-color:#ff9800;">${pE.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Faltam para Meta Global: <span>${formatUnits(tEMeta26)}</span></div><div>Alcançado: <span>${formatUnits(aE)}</span></div><div>Meta Global: <span>${formatUnits(GLOBAL_GOAL_ECONOMIAS)}</span></div><div>Meta Diária (Restante): <span>${formatUnits(dET)}</span></div><div>Dias Úteis: <span>${bDE}</span></div></div><div class="calendars" id="calendars-econ"></div></div>` + `<div class="panel-slide"><h2>Meta Avanço Físico 2026</h2><div class="progress-bar-sewage"><div class="progress-bar-fill-sewage" style="width:${pA > 100 ? 100 : pA.toFixed(2)}%;">${pA.toFixed(1).replace('.', ',')}%</div></div><div class="progress-details"><div>Faltam para Meta Total: <span>${formatUnits(tAMeta26, 'm')}</span></div><div>Executado: <span>${formatUnits(aA, 'm')}</span></div><div>Meta Total: <span>${formatUnits(tAMetaTotal, 'm')}</span></div><div>Meta Diária (Restante): <span>${formatUnits(dAT, 'm')}</span></div><div>Dias Úteis: <span>${bDA}</span></div></div><div class="calendars" id="calendars-avance"></div></div>`; const { renderAllCalendars } = setupCalendarLogic(H); renderAllCalendars(today, eI, sC.querySelector('#calendars-imob')); renderAllCalendars(today, eI, sC.querySelector('#calendars-costad')); renderAllCalendars(today, eE, sC.querySelector('#calendars-econ')); renderAllCalendars(today, eA, sC.querySelector('#calendars-avance')); slides = sC.querySelectorAll('.panel-slide'); currentSlide = 0; if (slides.length > 0) { slides[currentSlide].classList.add('active'); reiniciarTimerSlideshow(); } document.querySelector('.fullscreen-button').addEventListener('click', enterFullScreenMode); document.querySelector('.exit-fullscreen-button').addEventListener('click', exitFullScreenMode); document.addEventListener('keydown', handlePainelTVKeyPress); 
         }
         function setupCalendarLogic(h) { const holidaySet = new Set(h); function rM(y, m, gC, tED) { const localToday = new Date(); const today = new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())); const fD = new Date(y, m, 1), dIM = new Date(y, m + 1, 0).getDate(), sDOW = fD.getDay(); let gCs = []; gCs.push('<div class="week-number-header"></div>'); ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].forEach(n => gCs.push(`<div class="day-name">${n}</div>`)); for (let i = 0; i < sDOW; i++) gCs.push('<div class="empty-day"></div>'); for (let d = 1; d <= dIM; d++) { const cD = new Date(Date.UTC(y, m, d)); const cDOW = cD.getUTCDay(); if (cDOW === 0) gCs.push(`<div class="week-number">${gWN(cD)}</div>`); let cls = ['day']; if (cD.getTime() === today.getTime()) { cls.push('today'); } else if (cD < today) { cls.push('past-day'); } if (cD.getTime() === tED.getTime()) { cls.push('end-date'); } else if (cD > today && cD <= tED) { const iso = cD.toISOString().split('T')[0]; if (holidaySet.has(iso)) cls.push('holiday'); else if (cDOW === 0 || cDOW === 6) cls.push('weekend'); else cls.push('future-workday'); } gCs.push(`<div class="${cls.join(' ')}"><span class="day-of-month">${d}</span></div>`); } gC.innerHTML = gCs.join(''); } function gWN(d) { d = new Date(d); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); const yS = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); const wN = Math.ceil((((d - yS) / 864e5) + 1) / 7); return wN; } return { renderAllCalendars: function (s, e, c) { if (!c) return; c.innerHTML = ''; const mN = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]; let cD = new Date(s.getUTCFullYear(), s.getUTCMonth(), 1); while (cD <= e) { const y = cD.getFullYear(), m = cD.getMonth(); const mC = document.createElement('div'); mC.className = 'month'; mC.innerHTML = `<h3>${mN[m]} ${y}</h3><div class="calendar-grid"></div>`; const cG = mC.querySelector('.calendar-grid'); rM(y, m, cG, e); c.appendChild(mC); cD.setMonth(cD.getMonth() + 1); } } }; }
-
-        // =========================================================================
-        // GLOBALS E CORREÇÕES (v15 e v16)
-        // =========================================================================
 
         window.handleInputFormatting = function(e) { 
             const i = e.target, t = i.dataset.tipo; 
@@ -1073,7 +1103,7 @@
 
         async function carregarDados() { 
             try { 
-                const r = await fetch(JSONBIN_URL, { headers: { 'X-Master-Key': API_KEY } }); 
+                const r = await fetch(`${JSONBIN_URL_BASE}/${MASTER_BIN_ID}`, { headers: { 'X-Master-Key': API_KEY } }); 
                 if (!r.ok) throw new Error(`Falha na rede: ${r.status}`); 
                 const d = await r.json(); 
                 database = d.record; 
@@ -1091,7 +1121,7 @@
         }
 
         let saveTimeout;
-        function salvarDados(fU = false) { if (!isAdmin) { console.warn("Modo de leitura. Salvamento bloqueado."); return; } clearTimeout(saveTimeout); saveTimeout = setTimeout(async () => { console.log("Salvando..."); try { const r = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY }, body: JSON.stringify(database) }); if (!r.ok) throw new Error('Falha ao salvar.'); console.log("Salvo!"); if (fU) { const aL = navList.querySelector('a.active'); if (aL) aL.click(); } } catch (e) { console.error("Erro ao salvar:", e); alert("Não foi possível salvar."); } }, 1500); }
+        function salvarDados(fU = false) { if (!isAdmin) { console.warn("Modo de leitura. Salvamento bloqueado."); return; } clearTimeout(saveTimeout); saveTimeout = setTimeout(async () => { console.log("Salvando..."); try { const r = await fetch(`${JSONBIN_URL_BASE}/${MASTER_BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY }, body: JSON.stringify(database) }); if (!r.ok) throw new Error('Falha ao salvar.'); console.log("Salvo!"); if (fU) { const aL = navList.querySelector('a.active'); if (aL) aL.click(); } } catch (e) { console.error("Erro ao salvar:", e); alert("Não foi possível salvar."); } }, 1500); }
         function handleNavClick(e) { 
             e.preventDefault(); 
             document.removeEventListener('keydown', handlePainelTVKeyPress); 
