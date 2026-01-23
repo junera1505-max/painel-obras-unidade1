@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v27 (Mapa com Status & Legenda)</title>
+    <title>Sistema de Acompanhamento - v29 (Mapa Otimizado + Dados)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
@@ -232,7 +232,7 @@
             gap: 10px;
         }
 
-        /* --- MAP LEGEND CSS (ARQUITETURA NOVA) --- */
+        /* --- MAP LEGEND CSS --- */
         .info.legend {
             background: white;
             padding: 10px;
@@ -249,7 +249,7 @@
             float: left;
             margin-right: 8px;
             opacity: 1;
-            border: 1px solid #ccc; /* Borda para o branco aparecer */
+            border: 1px solid #ccc; 
         }
         .info.legend div {
             display: flex;
@@ -399,22 +399,17 @@
         //  LÓGICA DE MAPA (ESTILO E LEGENDA)
         // ==========================================
         
-        // Função auxiliar para normalizar strings (remover acentos e caixa alta)
         function normalizarTexto(texto) {
             if (!texto) return "";
             return texto.toString().trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
-        // Função que define a cor baseada no status
         function getColorByStatus(statusRaw) {
             const status = normalizarTexto(statusRaw);
-            
-            // Verifica substrings para ser mais flexível (ex: "EM EXECUCAO" pega "EM EXECUÇÃO")
             if (status.includes("AGUARDANDO")) return '#dc3545'; // Vermelho
             if (status.includes("EM EXECUCAO") || status.includes("EM EXECUÇÃO")) return '#ffc107'; // Amarelo
             if (status.includes("NAO SERA") || status.includes("NAO EXECUTADO")) return '#ffffff'; // Branco
-            if (status.includes("EXECUTADO")) return '#28a745'; // Verde (Check depois do "Não será" para não confundir)
-            
+            if (status.includes("EXECUTADO")) return '#28a745'; // Verde
             return '#3388ff'; // Azul padrão (fallback)
         }
 
@@ -437,20 +432,14 @@
             if (o.geoJsonData) {
                 try {
                     const geoJsonLayer = L.geoJSON(o.geoJsonData, {
-                        // Aplica o estilo dinamicamente
                         style: function(feature) {
-                            // Tenta encontrar a propriedade status (case insensitive)
                             let statusVal = "";
                             if (feature.properties) {
-                                // Procura chaves comuns
                                 statusVal = feature.properties.STATUS || feature.properties.Status || feature.properties.status || feature.properties.SITUACAO || "";
                             }
-                            
-                            const color = getColorByStatus(statusVal);
-                            
                             return { 
-                                color: color, 
-                                weight: 4, // Linha mais grossa para ver melhor o branco
+                                color: getColorByStatus(statusVal), 
+                                weight: 4,
                                 opacity: 1,
                                 fillOpacity: 0.7 
                             };
@@ -469,18 +458,15 @@
                     
                     map.fitBounds(geoJsonLayer.getBounds());
 
-                    // --- ADICIONAR LEGENDA ---
                     const legend = L.control({position: 'bottomright'});
                     legend.onAdd = function (map) {
                         const div = L.DomUtil.create('div', 'info legend');
-                        // Definição das categorias da legenda
                         const categories = [
                             { label: "Aguardando Execução", color: "#dc3545" },
                             { label: "Em Execução", color: "#ffc107" },
                             { label: "Executado", color: "#28a745" },
                             { label: "Não Será Executado", color: "#ffffff" }
                         ];
-
                         let html = '<strong>Legenda</strong><br>';
                         categories.forEach(cat => {
                             html += `<div><i style="background:${cat.color}"></i> ${cat.label}</div>`;
@@ -496,17 +482,93 @@
             }
         }
 
+        // ========================================================
+        //  ARQUITETURA: SANITIZAÇÃO DE GEOJSON (FIX: PAYLOAD SIZE)
+        // ========================================================
+        
+        function limparGeoJSON(geojson) {
+            // Função para reduzir drasticamente o tamanho do GeoJSON
+            if (!geojson || !geojson.features) return geojson;
+            
+            // Helper para encontrar chave ignorando maiusculas/minusculas
+            const findKey = (props, targets) => {
+                const keys = Object.keys(props);
+                for (const target of targets) {
+                    const found = keys.find(k => k.toUpperCase().trim() === target.toUpperCase());
+                    if (found) return props[found];
+                }
+                return "";
+            };
+
+            // 1. Manter apenas STATUS, NOME_ATUAL e CONTRATO
+            geojson.features.forEach(f => {
+                if (f.properties) {
+                    const status = findKey(f.properties, ['STATUS', 'SITUACAO', 'Status']);
+                    const nome = findKey(f.properties, ['NOME_ATUAL', 'NOME', 'TRECHO', 'Nome_Atual']);
+                    const contrato = findKey(f.properties, ['CONTRATO', 'PACOTE', 'Contrato']);
+                    
+                    // Substitui todo objeto properties por apenas o essencial
+                    f.properties = { 
+                        STATUS: status,
+                        NOME_ATUAL: nome,
+                        CONTRATO: contrato
+                    }; 
+                }
+            });
+
+            // 2. Truncar coordenadas (Reduz bytes de precisão inútil)
+            const truncarCoords = (coords) => {
+                if (typeof coords[0] === 'number') {
+                    return coords.map(c => Number(c.toFixed(5))); // 5 casas = ~1m de precisão (suficiente)
+                } else {
+                    return coords.map(truncarCoords);
+                }
+            };
+            
+            geojson.features.forEach(f => {
+                if (f.geometry && f.geometry.coordinates) {
+                    f.geometry.coordinates = truncarCoords(f.geometry.coordinates);
+                }
+            });
+
+            // 3. Remover metadados globais (CRS, Name, etc)
+            delete geojson.crs;
+            delete geojson.name;
+
+            return geojson;
+        }
+
         window.processarUploadGeoJSON = function(file, obraId) {
             if (!file) return;
+
+            // Alerta prévio se arquivo for absurdamente grande (> 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert("ATENÇÃO: Este arquivo é muito grande (" + (file.size/1024/1024).toFixed(2) + "MB). Tente simplificar no QGIS antes.");
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const jsonContent = JSON.parse(e.target.result);
+                    let jsonContent = JSON.parse(e.target.result);
+                    
+                    // APLICA LIMPEZA AUTOMÁTICA
+                    jsonContent = limparGeoJSON(jsonContent);
+
+                    // Verificar tamanho após limpeza
+                    const jsonString = JSON.stringify(jsonContent);
+                    const sizeInBytes = new Blob([jsonString]).size;
+                    
+                    if (sizeInBytes > 250 * 1024) { // Limite seguro de 250KB para o JSONBin Free
+                        alert(`ERRO: Mesmo após otimização, o mapa tem ${(sizeInBytes/1024).toFixed(0)}KB. O limite do banco é ~250KB.\n\nAção necessária: Abra o QGIS, vá em Vetor > Geometria > Simplificar e reduza os vértices.`);
+                        return;
+                    }
+
                     const obra = database.obras.find(o => o.id === obraId);
                     if (obra) {
                         obra.geoJsonData = jsonContent; 
                         salvarDados(false); 
-                        alert("Mapa carregado com sucesso! Atualizando visualização...");
+                        alert("Mapa otimizado e carregado com sucesso! Atualizando visualização...");
                         renderizarMapa(obra); 
                     }
                 } catch (err) {
@@ -538,7 +600,7 @@
                     <strong>Admin:</strong>
                     <label>Carregar GeoJSON:</label>
                     <input type="file" accept=".geojson, .json" onchange="window.processarUploadGeoJSON(this.files[0], '${o.id}')">
-                    <small style="color: #856404;">(Prefira arquivos .geojson leves)</small>
+                    <small style="color: #856404;">(O sistema tentará otimizar arquivos grandes automaticamente)</small>
                 </div>
              ` : '';
 
