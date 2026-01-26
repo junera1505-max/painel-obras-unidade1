@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Acompanhamento - v34 (Zerar Planejamento)</title>
+    <title>Sistema de Acompanhamento - v33 (Mapa Fullscreen)</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
@@ -775,29 +775,6 @@
             } 
         }
 
-        window.zerarPlanejamentoGlobal = function() {
-            if (!isAdmin) return;
-            // Trava 1: Confirmação Simples
-            if (!confirm("ATENÇÃO: Você está prestes a apagar TODO o Planejamento de 2026 de TODAS as obras.\n\nIsso não pode ser desfeito. Deseja continuar?")) return;
-            
-            // Trava 2: Confirmação Semântica (Digitação)
-            const confirmacao = prompt("Para confirmar a exclusão de TODOS os dados de planejamento, digite 'ZERA TUDO' na caixa abaixo (em maiúsculas):");
-            
-            if (confirmacao === 'ZERA TUDO') {
-                database.obras.forEach(o => {
-                    // Reseta os totais mensais para zero
-                    o.planejamento2026 = Array(12).fill(0);
-                    // Limpa todos os detalhes
-                    o.planejamentoDetalhes = {};
-                });
-                salvarDados(true);
-                alert("O planejamento de 2026 foi reiniciado com sucesso.");
-                window.mostrarPlanejamento2026('coord-geral');
-            } else {
-                alert("Ação cancelada. O código de confirmação estava incorreto.");
-            }
-        }
-
         window.mostrarPlanejamento2026 = function(obraIdSelecionada = null) {
             const obras = database.obras.sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto));
             const coordGeral = calculaDadosCoordenacao(obras);
@@ -860,17 +837,8 @@
             const statusClass = saldo < 0 ? 'prazo-vencido' : (saldo === 0 ? 'goal-surpassed' : '');
             const statusTexto = saldo < 0 ? `Ultrapassou a Meta 2026 em ${Math.abs(saldo)}` : (saldo === 0 ? 'Planejamento Bate com a Meta 2026!' : `Faltam planejar para 2026: ${saldo}`);
 
-            // Botão IMPORTAR EXCEL (Admin + Single Obra ou Coord dependendo da logica, aqui mantido global)
-            // NOVO: Botão ZERAR (Admin + Coord Geral apenas)
-            let actionButtons = '';
-            
-            if (isAdmin) {
-                if (!isCoordMode) {
-                     actionButtons += `<button onclick="triggerImportacaoExcel()" class="btn-primary" style="background-color: #28a745; margin-left: 20px;">📂 Importar Excel</button>`;
-                } else {
-                     actionButtons += `<button onclick="window.zerarPlanejamentoGlobal()" class="btn-primary" style="background-color: #c82333; margin-left: 20px;">🗑️ Zerar Tudo</button>`;
-                }
-            }
+            const adminButton = (isAdmin && !isCoordMode) ? 
+                `<button onclick="triggerImportacaoExcel()" class="btn-primary" style="background-color: #28a745; margin-left: 20px;">📂 Importar Excel</button>` : '';
 
             contentArea.innerHTML = `
                 <div class="content-header">
@@ -879,7 +847,7 @@
                             <h1>Planejamento de Entregas 2026</h1>
                             <p>Clique no mês para detalhar.</p>
                         </div>
-                        ${actionButtons}
+                        ${adminButton}
                     </div>
                 </div>
                 <div class="planning-tabs">${tabsHtml}</div>
